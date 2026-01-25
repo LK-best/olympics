@@ -14,7 +14,6 @@ class Create:
 
         with open(name, 'r', encoding='utf-8') as file:
             imp = file.read()
-            print(imp)
         with sqlite3.connect(self.file) as conn:
             conn.executescript(imp)
 
