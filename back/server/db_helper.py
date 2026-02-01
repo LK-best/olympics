@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # помощник для работы с базой данных
 # переписал с json на sqlite потому что json тормозит
 # добавил функции для сервера
@@ -657,6 +658,377 @@ def proverit_bazu():
         print("ошибка проверки базы: " + str(e))
         zakrit_connect(conn)
         return False
+
+
+def poluchit_vse_eventi(status=None):
+    """Получить все события, опционально фильтр по статусу"""
+    if status:
+        sql = "SELECT * FROM events WHERE status = ? ORDER BY start_time DESC"
+        events = vipolnit_zapros(sql, (status,), fetchall=True)
+    else:
+        sql = "SELECT * FROM events ORDER BY start_time DESC"
+        events = vipolnit_zapros(sql, fetchall=True)
+
+    return _parse_events(events)
+
+
+def poluchit_aktivnie_eventi():
+    """Получить активные и предстоящие события"""
+    sql = """
+        SELECT * FROM events 
+        WHERE status IN ('active', 'upcoming') 
+        ORDER BY start_time ASC
+    """
+    events = vipolnit_zapros(sql, fetchall=True)
+    return _parse_events(events)
+
+
+def poluchit_event_po_id(event_id):
+    """Получить событие по ID"""
+    sql = "SELECT * FROM events WHERE id = ?"
+    event = vipolnit_zapros(sql, (event_id,), fetchone=True)
+    return _parse_event(event)
+
+
+def _parse_events(events):
+    if events is None:
+        return []
+    rezultat = []
+    for e in events:
+        rezultat.append(_parse_event(e))
+    return rezultat
+
+
+def _parse_event(event):
+    if event is None:
+        return None
+
+    # Парсим JSON поля
+    if event.get("rules"):
+        try:
+            event["rules"] = json.loads(event["rules"])
+        except:
+            event["rules"] = {}
+    else:
+        event["rules"] = {}
+
+    if event.get("prizes"):
+        try:
+            event["prizes"] = json.loads(event["prizes"])
+        except:
+            event["prizes"] = {}
+    else:
+        event["prizes"] = {}
+
+    return event
+
+
+def sozdat_event(name, description, event_type, start_time, end_time, rules, max_participants, prizes, created_by):
+    """Создать новое событие"""
+    rules_json = json.dumps(rules) if isinstance(rules, dict) else rules
+    prizes_json = json.dumps(prizes) if isinstance(prizes, dict) else prizes
+
+    sql = """
+        INSERT INTO events (name, description, type, status, start_time, end_time, rules, max_participants, prizes, created_by)
+        VALUES (?, ?, ?, 'upcoming', ?, ?, ?, ?, ?, ?)
+    """
+    return vipolnit_zapros(sql, (
+    name, description, event_type, start_time, end_time, rules_json, max_participants, prizes_json, created_by),
+                           commit=True)
+
+
+def obnovit_event(event_id, **polya):
+    """Обновить событие"""
+    if len(polya) == 0:
+        return False
+
+    set_chasti = []
+    znacheniya = []
+
+    for pole, znachenie in polya.items():
+        set_chasti.append(pole + " = ?")
+        if pole in ["rules", "prizes"] and isinstance(znachenie, dict):
+            znachenie = json.dumps(znachenie)
+        znacheniya.append(znachenie)
+
+    znacheniya.append(event_id)
+
+    sql = "UPDATE events SET " + ", ".join(set_chasti) + " WHERE id = ?"
+    vipolnit_zapros(sql, tuple(znacheniya), commit=True)
+    return True
+
+
+def obnovit_status_eventov():
+    """Автоматически обновляет статусы событий на основе времени"""
+    from datetime import datetime
+
+    seychas = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Активируем события, которые должны начаться
+    sql = """
+        UPDATE events 
+        SET status = 'active' 
+        WHERE status = 'upcoming' AND start_time <= ?
+    """
+    vipolnit_zapros(sql, (seychas,), commit=True)
+
+    # Завершаем события, время которых истекло
+    sql = """
+        UPDATE events 
+        SET status = 'finished' 
+        WHERE status = 'active' AND end_time <= ?
+    """
+    vipolnit_zapros(sql, (seychas,), commit=True)
+
+
+###################################
+# УЧАСТНИКИ СОБЫТИЙ
+###################################
+
+def dobavit_uchastnika_eventa(event_id, user_id):
+    """Добавить участника в событие"""
+    sql = """
+        INSERT OR IGNORE INTO event_participants (event_id, user_id)
+        VALUES (?, ?)
+    """
+    result = vipolnit_zapros(sql, (event_id, user_id), commit=True)
+
+    # Обновляем счётчик участников
+    if result:
+        sql = "UPDATE events SET current_participants = current_participants + 1 WHERE id = ?"
+        vipolnit_zapros(sql, (event_id,), commit=True)
+
+    return result
+
+
+def ubrat_uchastnika_eventa(event_id, user_id):
+    """Удалить участника из события"""
+    sql = "DELETE FROM event_participants WHERE event_id = ? AND user_id = ?"
+    vipolnit_zapros(sql, (event_id, user_id), commit=True)
+
+    sql = "UPDATE events SET current_participants = current_participants - 1 WHERE id = ? AND current_participants > 0"
+    vipolnit_zapros(sql, (event_id,), commit=True)
+    return True
+
+
+def poluchit_uchastnikov_eventa(event_id, limit=100):
+    """Получить участников события, отсортированных по очкам"""
+    sql = """
+        SELECT ep.*, u.username, u.rating, u.level
+        FROM event_participants ep
+        JOIN users u ON ep.user_id = u.id
+        WHERE ep.event_id = ?
+        ORDER BY ep.score DESC, ep.tasks_correct DESC
+        LIMIT ?
+    """
+    participants = vipolnit_zapros(sql, (event_id, limit), fetchall=True)
+
+    if participants:
+        for p in participants:
+            if p.get("stats"):
+                try:
+                    p["stats"] = json.loads(p["stats"])
+                except:
+                    p["stats"] = {}
+
+    return participants if participants else []
+
+
+def poluchit_uchastie_usera(event_id, user_id):
+    """Проверить участие пользователя в событии"""
+    sql = "SELECT * FROM event_participants WHERE event_id = ? AND user_id = ?"
+    participant = vipolnit_zapros(sql, (event_id, user_id), fetchone=True)
+
+    if participant and participant.get("stats"):
+        try:
+            participant["stats"] = json.loads(participant["stats"])
+        except:
+            participant["stats"] = {}
+
+    return participant
+
+
+def poluchit_aktivnie_eventi_usera(user_id, event_type=None):
+    """Получить активные события, в которых участвует пользователь"""
+    if event_type:
+        sql = """
+            SELECT e.* FROM events e
+            JOIN event_participants ep ON e.id = ep.event_id
+            WHERE ep.user_id = ? AND e.status = 'active' AND e.type = ?
+        """
+        events = vipolnit_zapros(sql, (user_id, event_type), fetchall=True)
+    else:
+        sql = """
+            SELECT e.* FROM events e
+            JOIN event_participants ep ON e.id = ep.event_id
+            WHERE ep.user_id = ? AND e.status = 'active'
+        """
+        events = vipolnit_zapros(sql, (user_id,), fetchall=True)
+
+    return _parse_events(events)
+
+
+def obnovit_score_eventa(event_id, user_id, points_to_add, tasks_solved=0, tasks_correct=0):
+    """Обновить очки участника в событии"""
+    sql = """
+        UPDATE event_participants 
+        SET score = score + ?,
+            tasks_solved = tasks_solved + ?,
+            tasks_correct = tasks_correct + ?
+        WHERE event_id = ? AND user_id = ?
+    """
+    vipolnit_zapros(sql, (points_to_add, tasks_solved, tasks_correct, event_id, user_id), commit=True)
+    return True
+
+
+def obnovit_match_stats_eventa(event_id, user_id, won=False):
+    """Обновить статистику матчей участника"""
+    if won:
+        sql = """
+            UPDATE event_participants 
+            SET matches_played = matches_played + 1,
+                matches_won = matches_won + 1
+            WHERE event_id = ? AND user_id = ?
+        """
+    else:
+        sql = """
+            UPDATE event_participants 
+            SET matches_played = matches_played + 1
+            WHERE event_id = ? AND user_id = ?
+        """
+    vipolnit_zapros(sql, (event_id, user_id), commit=True)
+    return True
+
+
+###################################
+# МАРАФОНЫ
+###################################
+
+def dobavit_aktivnost_marafona(event_id, user_id, activity_type, points, details=None):
+    """Добавить запись об активности в марафоне"""
+    details_json = json.dumps(details) if details else "{}"
+
+    sql = """
+        INSERT INTO marathon_activity (event_id, user_id, activity_type, points_earned, details)
+        VALUES (?, ?, ?, ?, ?)
+    """
+    return vipolnit_zapros(sql, (event_id, user_id, activity_type, points, details_json), commit=True)
+
+
+def poluchit_aktivnost_marafona(event_id, user_id=None, limit=50):
+    """Получить историю активности в марафоне"""
+    if user_id:
+        sql = """
+            SELECT * FROM marathon_activity 
+            WHERE event_id = ? AND user_id = ?
+            ORDER BY created_at DESC
+            LIMIT ?
+        """
+        return vipolnit_zapros(sql, (event_id, user_id, limit), fetchall=True)
+    else:
+        sql = """
+            SELECT ma.*, u.username FROM marathon_activity ma
+            JOIN users u ON ma.user_id = u.id
+            WHERE ma.event_id = ?
+            ORDER BY ma.created_at DESC
+            LIMIT ?
+        """
+        return vipolnit_zapros(sql, (event_id, limit), fetchall=True)
+
+
+###################################
+# ТУРНИРЫ
+###################################
+
+def sozdat_match_turnira(event_id, round_num, player1_id, player2_id, match_id=None):
+    """Создать матч турнира"""
+    sql = """
+        INSERT INTO tournament_matches (event_id, round_num, player1_id, player2_id, match_id, status)
+        VALUES (?, ?, ?, ?, ?, 'pending')
+    """
+    return vipolnit_zapros(sql, (event_id, round_num, player1_id, player2_id, match_id), commit=True)
+
+
+def poluchit_matchi_turnira(event_id, round_num=None):
+    """Получить матчи турнира"""
+    if round_num is not None:
+        sql = """
+            SELECT tm.*, 
+                   u1.username as player1_name, u1.rating as player1_rating,
+                   u2.username as player2_name, u2.rating as player2_rating
+            FROM tournament_matches tm
+            LEFT JOIN users u1 ON tm.player1_id = u1.id
+            LEFT JOIN users u2 ON tm.player2_id = u2.id
+            WHERE tm.event_id = ? AND tm.round_num = ?
+            ORDER BY tm.id
+        """
+        return vipolnit_zapros(sql, (event_id, round_num), fetchall=True)
+    else:
+        sql = """
+            SELECT tm.*, 
+                   u1.username as player1_name, u1.rating as player1_rating,
+                   u2.username as player2_name, u2.rating as player2_rating
+            FROM tournament_matches tm
+            LEFT JOIN users u1 ON tm.player1_id = u1.id
+            LEFT JOIN users u2 ON tm.player2_id = u2.id
+            WHERE tm.event_id = ?
+            ORDER BY tm.round_num, tm.id
+        """
+        return vipolnit_zapros(sql, (event_id,), fetchall=True)
+
+
+def poluchit_match_turnira_po_match_id(match_id):
+    """Получить матч турнира по ID обычного матча"""
+    sql = "SELECT * FROM tournament_matches WHERE match_id = ?"
+    return vipolnit_zapros(sql, (match_id,), fetchone=True)
+
+
+def obnovit_match_turnira(tournament_match_id, match_id=None, winner_id=None, status=None):
+    """Обновить матч турнира"""
+    updates = []
+    params = []
+
+    if match_id is not None:
+        updates.append("match_id = ?")
+        params.append(match_id)
+
+    if winner_id is not None:
+        updates.append("winner_id = ?")
+        params.append(winner_id)
+
+    if status is not None:
+        updates.append("status = ?")
+        params.append(status)
+
+    if not updates:
+        return False
+
+    params.append(tournament_match_id)
+    sql = "UPDATE tournament_matches SET " + ", ".join(updates) + " WHERE id = ?"
+    vipolnit_zapros(sql, tuple(params), commit=True)
+    return True
+
+
+def poluchit_tekushiy_raund_turnira(event_id):
+    """Получить текущий раунд турнира"""
+    sql = """
+        SELECT MAX(round_num) as current_round 
+        FROM tournament_matches 
+        WHERE event_id = ?
+    """
+    result = vipolnit_zapros(sql, (event_id,), fetchone=True)
+    return result["current_round"] if result and result["current_round"] else 0
+
+
+def proverit_zavershenie_raunda(event_id, round_num):
+    """Проверить, завершены ли все матчи раунда"""
+    sql = """
+        SELECT COUNT(*) as pending 
+        FROM tournament_matches 
+        WHERE event_id = ? AND round_num = ? AND status != 'finished'
+    """
+    result = vipolnit_zapros(sql, (event_id, round_num), fetchone=True)
+    return result["pending"] == 0 if result else True
 
 
 if __name__ == "__main__":
