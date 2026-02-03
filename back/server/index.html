@@ -1,0 +1,3826 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduBattle - Образовательные поединки</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #e8e8e8;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 12px 24px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+        }
+
+        .input-field {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 14px 18px;
+            color: white;
+            width: 100%;
+            transition: border-color 0.3s;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .input-field::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .nav-item {
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.25s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(102, 126, 234, 0.25);
+        }
+
+        .task-option {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px 20px;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+
+        .task-option:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.15);
+        }
+
+        .task-option.selected {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.25);
+        }
+
+        .task-option.correct {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.2);
+        }
+
+        .task-option.wrong {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.2);
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 4px;
+            transition: width 0.4s ease;
+        }
+
+        .achievement-badge {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .hidden { display: none !important; }
+
+        .fade-in {
+            animation: fadeIn 0.35s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .pulse-anim {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .match-result-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+
+        .match-result-card:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: #667eea;
+        }
+
+        .task-detail-row {
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 10px;
+        }
+
+        .ws-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .ws-connected { background: #10b981; }
+        .ws-disconnected { background: #ef4444; }
+        .ws-connecting { background: #f59e0b; animation: pulse 1s infinite; }
+
+        .comparison-bar {
+            display: flex;
+            height: 24px;
+            border-radius: 6px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .comparison-bar .my-part {
+            background: linear-gradient(90deg, #10b981, #059669);
+            transition: width 0.3s;
+        }
+
+        .comparison-bar .opp-part {
+            background: linear-gradient(90deg, #ef4444, #dc2626);
+            transition: width 0.3s;
+        }
+
+        /* Стили для турниров и марафонов */
+        .event-card {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .event-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(102, 126, 234, 0.5);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .event-card.marathon {
+            border-left: 4px solid #f59e0b;
+        }
+
+        .event-card.tournament {
+            border-left: 4px solid #8b5cf6;
+        }
+
+        .event-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .event-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .event-badge.marathon {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.2));
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .event-badge.tournament {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(124, 58, 237, 0.2));
+            color: #a78bfa;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .event-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .event-status.active {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+        }
+
+        .event-status.upcoming {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+        }
+
+        .event-status.finished {
+            background: rgba(107, 114, 128, 0.2);
+            color: #9ca3af;
+        }
+
+        .event-timer {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.15));
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .event-timer .time-value {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f87171, #fbbf24);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .leaderboard-row {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+
+        .leaderboard-row:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .leaderboard-row.top-1 {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 193, 7, 0.1));
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .leaderboard-row.top-2 {
+            background: linear-gradient(135deg, rgba(192, 192, 192, 0.15), rgba(156, 163, 175, 0.1));
+            border: 1px solid rgba(192, 192, 192, 0.3);
+        }
+
+        .leaderboard-row.top-3 {
+            background: linear-gradient(135deg, rgba(205, 127, 50, 0.15), rgba(180, 83, 9, 0.1));
+            border: 1px solid rgba(205, 127, 50, 0.3);
+        }
+
+        .leaderboard-row.my-row {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.1));
+            border: 1px solid rgba(102, 126, 234, 0.4);
+        }
+
+        .rank-badge {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            margin-right: 16px;
+        }
+
+        .rank-badge.gold {
+            background: linear-gradient(135deg, #ffd700, #ffb700);
+            color: #1a1a2e;
+        }
+
+        .rank-badge.silver {
+            background: linear-gradient(135deg, #c0c0c0, #a0a0a0);
+            color: #1a1a2e;
+        }
+
+        .rank-badge.bronze {
+            background: linear-gradient(135deg, #cd7f32, #b45309);
+            color: white;
+        }
+
+        .rank-badge.default {
+            background: rgba(255, 255, 255, 0.1);
+            color: #9ca3af;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .activity-icon.training {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.2));
+        }
+
+        .activity-icon.pvp_win {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2));
+        }
+
+        .activity-icon.pvp_loss {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.2));
+        }
+
+        .activity-icon.pvp_draw {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.2));
+        }
+
+        .tournament-bracket {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .tournament-match {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+        }
+
+        .tournament-match:hover {
+            border-color: rgba(102, 126, 234, 0.4);
+        }
+
+        .tournament-match.my-match {
+            border-color: rgba(102, 126, 234, 0.5);
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .tournament-match.finished {
+            opacity: 0.7;
+        }
+
+        .player-slot {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 6px;
+            margin-bottom: 4px;
+        }
+
+        .player-slot.winner {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .player-slot.loser {
+            opacity: 0.6;
+        }
+
+        .prizes-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .prize-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .prize-card.first {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 193, 7, 0.05));
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .prize-card.second {
+            background: linear-gradient(135deg, rgba(192, 192, 192, 0.1), rgba(156, 163, 175, 0.05));
+            border: 1px solid rgba(192, 192, 192, 0.3);
+        }
+
+        .prize-card.third {
+            background: linear-gradient(135deg, rgba(205, 127, 50, 0.1), rgba(180, 83, 9, 0.05));
+            border: 1px solid rgba(205, 127, 50, 0.3);
+        }
+
+        .prize-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
+
+        .tabs-container {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 8px;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border-radius: 8px 8px 0 0;
+            background: transparent;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .tab-btn:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            color: white;
+            background: rgba(102, 126, 234, 0.2);
+            border-bottom: 2px solid #667eea;
+        }
+
+        .countdown-timer {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+        }
+
+        .countdown-unit {
+            text-align: center;
+        }
+
+        .countdown-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .countdown-label {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            text-transform: uppercase;
+        }
+
+        .rules-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .rules-list li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .rules-list li:last-child {
+            border-bottom: none;
+        }
+
+        .rule-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(102, 126, 234, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* скроллбар */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+        }
+
+        /* Анимации для событий */
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .shimmer-effect {
+            background: linear-gradient(90deg,
+                rgba(255,255,255,0) 0%,
+                rgba(255,255,255,0.1) 50%,
+                rgba(255,255,255,0) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+
+        .glow-effect {
+            box-shadow: 0 0 30px rgba(102, 126, 234, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="min-h-screen">
+        <!-- экран загрузки -->
+        <div id="loading-screen" class="fixed inset-0 flex items-center justify-center z-50">
+            <div class="text-center">
+                <div class="text-5xl mb-4">⚔️</div>
+                <h1 class="text-3xl font-bold mb-2">EduBattle</h1>
+                <p class="text-gray-400 pulse-anim">Загрузка...</p>
+            </div>
+        </div>
+
+        <!-- экран авторизации -->
+        <div id="auth-screen" class="hidden min-h-screen flex items-center justify-center p-4">
+            <div class="glass-card p-8 w-full max-w-md fade-in">
+                <div class="text-center mb-8">
+                    <div class="text-5xl mb-3">⚔️</div>
+                    <h1 class="text-3xl font-bold">EduBattle</h1>
+                    <p class="text-gray-400 mt-2">Образовательные поединки</p>
+                </div>
+
+                <div id="login-form">
+                    <div class="mb-4">
+                        <input type="email" id="login-email" class="input-field" placeholder="Email">
+                    </div>
+                    <div class="mb-6">
+                        <input type="password" id="login-password" class="input-field" placeholder="Пароль">
+                    </div>
+                    <button onclick="vypolnitVhod()" class="btn-primary w-full mb-4">Войти</button>
+                    <p class="text-center text-gray-400">
+                        Нет аккаунта?
+                        <span onclick="pokazatRegistraciyu()" class="text-purple-400 cursor-pointer hover:underline">Регистрация</span>
+                    </p>
+                </div>
+
+                <div id="register-form" class="hidden">
+                    <div class="mb-4">
+                        <input type="text" id="reg-name" class="input-field" placeholder="Имя">
+                    </div>
+                    <div class="mb-4">
+                        <input type="email" id="reg-email" class="input-field" placeholder="Email">
+                    </div>
+                    <div class="mb-6">
+                        <input type="password" id="reg-password" class="input-field" placeholder="Пароль (мин. 6 символов)">
+                    </div>
+                    <button onclick="vypolnitRegistraciyu()" class="btn-primary w-full mb-4">Зарегистрироваться</button>
+                    <p class="text-center text-gray-400">
+                        Уже есть аккаунт?
+                        <span onclick="pokazatVhod()" class="text-purple-400 cursor-pointer hover:underline">Войти</span>
+                    </p>
+                </div>
+
+                <div id="auth-error" class="hidden mt-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300 text-center"></div>
+            </div>
+        </div>
+
+        <!-- главный экран приложения -->
+        <div id="main-screen" class="hidden">
+            <div class="flex min-h-screen">
+                <!-- боковая панель -->
+                <aside class="w-64 glass-card m-4 p-4 flex flex-col">
+                    <div class="flex items-center gap-3 mb-8 p-3">
+                        <div class="text-3xl">⚔️</div>
+                        <div>
+                            <h2 class="font-bold text-lg">EduBattle</h2>
+                            <div class="flex items-center gap-2 text-xs text-gray-400">
+                                <span class="ws-status" id="ws-indicator"></span>
+                                <span id="ws-status-text">офлайн</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <nav class="flex-1 space-y-2">
+                        <div class="nav-item active" data-section="dashboard" onclick="pokazatSekciyu('dashboard')">
+                            <span>🏠</span> <span>Главная</span>
+                        </div>
+                        <div class="nav-item" data-section="training" onclick="pokazatSekciyu('training')">
+                            <span>📚</span> <span>Тренировка</span>
+                        </div>
+                        <div class="nav-item" data-section="pvp" onclick="pokazatSekciyu('pvp')">
+                            <span>⚔️</span> <span>PvP Бой</span>
+                        </div>
+                        <div class="nav-item" data-section="events" onclick="pokazatSekciyu('events')">
+                            <span>🏆</span> <span>Турниры</span>
+                        </div>
+                        <div class="nav-item" data-section="results" onclick="pokazatSekciyu('results')">
+                            <span>📊</span> <span>Результаты</span>
+                        </div>
+                        <div class="nav-item" data-section="leaderboard" onclick="pokazatSekciyu('leaderboard')">
+                            <span>🎖️</span> <span>Рейтинг</span>
+                        </div>
+                        <div class="nav-item" data-section="profile" onclick="pokazatSekciyu('profile')">
+                            <span>👤</span> <span>Профиль</span>
+                        </div>
+                        <div id="admin-nav" class="nav-item hidden" data-section="admin" onclick="pokazatSekciyu('admin')">
+                            <span>⚙️</span> <span>Админка</span>
+                        </div>
+                    </nav>
+
+                    <div class="mt-auto pt-4 border-t border-white/10">
+                        <div class="flex items-center gap-3 p-3">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold" id="user-avatar">U</div>
+                            <div class="flex-1 min-w-0">
+                                <div class="font-medium truncate" id="user-name-sidebar">Пользователь</div>
+                                <div class="text-xs text-gray-400">Уровень <span id="user-level-sidebar">1</span></div>
+                            </div>
+                        </div>
+                        <button onclick="vyjtiIzAkkunta()" class="btn-secondary w-full mt-2 text-sm">Выйти</button>
+                    </div>
+                </aside>
+
+                <!-- основной контент -->
+                <main class="flex-1 p-4 overflow-auto">
+                    <!-- секция дашборда -->
+                    <section id="section-dashboard" class="fade-in">
+                        <h1 class="text-3xl font-bold mb-6">Добро пожаловать, <span id="welcome-name">Пользователь</span>!</h1>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                            <div class="stat-card">
+                                <div class="text-3xl mb-2">🎯</div>
+                                <div class="text-2xl font-bold" id="stat-solved">0</div>
+                                <div class="text-gray-400 text-sm">Решено задач</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="text-3xl mb-2">✅</div>
+                                <div class="text-2xl font-bold" id="stat-correct">0%</div>
+                                <div class="text-gray-400 text-sm">Точность</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="text-3xl mb-2">⚔️</div>
+                                <div class="text-2xl font-bold" id="stat-wins">0</div>
+                                <div class="text-gray-400 text-sm">Побед в PvP</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="text-3xl mb-2">📈</div>
+                                <div class="text-2xl font-bold" id="stat-rating">1000</div>
+                                <div class="text-gray-400 text-sm">Рейтинг</div>
+                            </div>
+                        </div>
+
+                        <!-- Активные события на дашборде -->
+                        <div id="dashboard-events" class="glass-card p-6 mb-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-xl font-bold">🔥 Активные события</h3>
+                                <button onclick="pokazatSekciyu('events')" class="btn-secondary text-sm">Все события →</button>
+                            </div>
+                            <div id="dashboard-events-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <p class="text-gray-400 col-span-2 text-center py-4">Загрузка...</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="glass-card p-6">
+                                <h3 class="text-xl font-bold mb-4">📊 Решения по дням недели</h3>
+                                <div style="height: 250px;">
+                                    <canvas id="weekly-chart"></canvas>
+                                </div>
+                            </div>
+
+                            <div class="glass-card p-6">
+                                <h3 class="text-xl font-bold mb-4">🏅 Достижения</h3>
+                                <div id="achievements-list" class="grid grid-cols-4 gap-3">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-card p-6 mt-6">
+                            <h3 class="text-xl font-bold mb-4">📜 Последняя активность</h3>
+                            <div id="activity-list" class="space-y-2 max-h-48 overflow-auto">
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- секция тренировки -->
+                    <section id="section-training" class="hidden fade-in">
+                        <h1 class="text-3xl font-bold mb-6">📚 Тренировка</h1>
+
+                        <div id="training-setup" class="glass-card p-6 max-w-2xl">
+                            <h3 class="text-xl font-bold mb-4">Настройки тренировки</h3>
+
+                            <div class="mb-4">
+                                <label class="block text-gray-400 mb-2">Предмет</label>
+                                <select id="training-subject" class="input-field">
+                                    <option value="math">Математика</option>
+                                    <option value="physics">Физика</option>
+                                    <option value="russian">Русский язык</option>
+                                    <option value="history">История</option>
+                                    <option value="informatics">Информатика</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="block text-gray-400 mb-2">Сложность</label>
+                                <select id="training-difficulty" class="input-field">
+                                    <option value="adaptive">Адаптивная</option>
+                                    <option value="easy">Лёгкая</option>
+                                    <option value="medium">Средняя</option>
+                                    <option value="hard">Сложная</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-6">
+                                <label class="block text-gray-400 mb-2">Количество задач</label>
+                                <select id="training-count" class="input-field">
+                                    <option value="5">5 задач</option>
+                                    <option value="10">10 задач</option>
+                                    <option value="15">15 задач</option>
+                                    <option value="20">20 задач</option>
+                                </select>
+                            </div>
+
+                            <button onclick="nachatTrenirovku()" class="btn-primary">Начать тренировку</button>
+                        </div>
+
+                        <div id="training-active" class="hidden">
+                            <div class="glass-card p-6 mb-4">
+                                <div class="flex justify-between items-center mb-4">
+                                    <span class="text-gray-400">Задача <span id="training-current">1</span> из <span id="training-total">5</span></span>
+                                    <span class="text-xl font-bold" id="training-timer">00:00</span>
+                                </div>
+                                <div class="progress-bar mb-4">
+                                    <div class="progress-fill" id="training-progress" style="width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <div class="glass-card p-6">
+                                <div class="mb-2 text-sm text-purple-400" id="training-topic">Тема</div>
+                                <h2 class="text-2xl font-bold mb-6" id="training-question">Вопрос?</h2>
+
+                                <div id="training-options" class="space-y-3 mb-6">
+                                </div>
+
+                                <div id="training-hint" class="hidden p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg mb-4">
+                                    <span class="text-yellow-400">💡 Подсказка:</span> <span id="training-hint-text"></span>
+                                </div>
+
+                                <div class="flex gap-4">
+                                    <button onclick="pokazatPodskazku()" class="btn-secondary">Подсказка</button>
+                                    <button onclick="sleduushayaZadachaTraining()" class="btn-primary" id="training-next-btn" disabled>Далее</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="training-results" class="hidden glass-card p-6 max-w-2xl">
+                            <h2 class="text-2xl font-bold mb-4 text-center">🎉 Тренировка завершена!</h2>
+                            <div class="grid grid-cols-3 gap-4 mb-6">
+                                <div class="stat-card">
+                                    <div class="text-3xl font-bold text-green-400" id="result-correct">0</div>
+                                    <div class="text-gray-400 text-sm">Правильно</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="text-3xl font-bold text-red-400" id="result-wrong">0</div>
+                                    <div class="text-gray-400 text-sm">Ошибки</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="text-3xl font-bold text-purple-400" id="result-xp">+0</div>
+                                    <div class="text-gray-400 text-sm">XP</div>
+                                </div>
+                            </div>
+                            <button onclick="resetTrenirovku()" class="btn-primary w-full">Новая тренировка</button>
+                        </div>
+                    </section>
+
+                    <!-- секция PvP -->
+                    <section id="section-pvp" class="hidden fade-in">
+                        <h1 class="text-3xl font-bold mb-6">⚔️ PvP Поединок</h1>
+
+                        <div id="pvp-setup" class="glass-card p-6 max-w-2xl">
+                            <h3 class="text-xl font-bold mb-4">Настройки боя</h3>
+
+                            <div class="mb-4">
+                                <label class="block text-gray-400 mb-2">Предмет</label>
+                                <select id="pvp-subject" class="input-field">
+                                    <option value="math">Математика</option>
+                                    <option value="physics">Физика</option>
+                                    <option value="russian">Русский язык</option>
+                                    <option value="history">История</option>
+                                    <option value="informatics">Информатика</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-6">
+                                <label class="block text-gray-400 mb-2">Режим</label>
+                                <select id="pvp-mode" class="input-field">
+                                    <option value="ranked">Рейтинговый</option>
+                                    <option value="casual">Обычный</option>
+                                </select>
+                            </div>
+
+                            <div class="flex gap-4">
+                                <button onclick="iskatSopernika()" class="btn-primary flex-1">Найти соперника</button>
+                                <button onclick="igratSBotom()" class="btn-secondary flex-1">Играть с ботом</button>
+                            </div>
+                        </div>
+
+                        <div id="pvp-searching" class="hidden glass-card p-6 max-w-2xl text-center">
+                            <div class="text-5xl mb-4 pulse-anim">🔍</div>
+                            <h2 class="text-2xl font-bold mb-2">Поиск соперника...</h2>
+                            <p class="text-gray-400 mb-4">Позиция в очереди: <span id="queue-position">1</span></p>
+                            <button onclick="otmenitPoisk()" class="btn-secondary">Отменить</button>
+                            <button onclick="igratSBotom()" class="btn-secondary ml-2">Играть с ботом</button>
+                        </div>
+
+                        <div id="pvp-match" class="hidden">
+                            <div class="glass-card p-4 mb-4">
+                                <div class="flex justify-between items-center">
+                                    <div class="text-center">
+                                        <div class="font-bold" id="pvp-my-name">Вы</div>
+                                        <div class="text-3xl font-bold text-green-400" id="pvp-my-score">0</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-gray-400 text-sm">Задача <span id="pvp-task-num">1</span>/5</div>
+                                        <div class="text-2xl font-bold" id="pvp-timer">30</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="font-bold" id="pvp-opp-name">Соперник</div>
+                                        <div class="text-3xl font-bold text-red-400" id="pvp-opp-score">0</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="glass-card p-6">
+                                <div class="mb-2 text-sm text-purple-400" id="pvp-topic">Тема</div>
+                                <h2 class="text-2xl font-bold mb-6" id="pvp-question">Вопрос?</h2>
+
+                                <div id="pvp-options" class="space-y-3 mb-6">
+                                </div>
+
+                                <button onclick="sleduushayaZadachaPvP()" class="btn-primary w-full" id="pvp-next-btn" disabled>Следующий вопрос</button>
+                            </div>
+                        </div>
+
+                        <div id="pvp-result" class="hidden glass-card p-6 max-w-2xl text-center">
+                            <div class="text-6xl mb-4" id="pvp-result-emoji">🏆</div>
+                            <h2 class="text-3xl font-bold mb-2" id="pvp-result-title">Победа!</h2>
+                            <p class="text-xl text-gray-400 mb-4" id="pvp-result-score">5 : 3</p>
+                            <p class="text-lg mb-6" id="pvp-rating-change">Рейтинг: +25</p>
+                            <div class="flex gap-4 justify-center">
+                                <button onclick="pokazatDetaliBoya()" class="btn-secondary">Подробности</button>
+                                <button onclick="resetPvP()" class="btn-primary">Новый бой</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- секция турниров и марафонов -->
+                    <section id="section-events" class="hidden fade-in">
+                        <div class="flex justify-between items-center mb-6">
+                            <h1 class="text-3xl font-bold">🏆 Турниры и Марафоны</h1>
+                            <div id="admin-event-btn" class="hidden">
+                                <button onclick="pokazatFormuSozdaniyaEventa()" class="btn-primary">+ Создать событие</button>
+                            </div>
+                        </div>
+
+                        <!-- Список событий -->
+                        <div id="events-list-view">
+                            <!-- Табы -->
+                            <div class="tabs-container">
+                                <button class="tab-btn active" onclick="filterEventy('all', this)">Все</button>
+                                <button class="tab-btn" onclick="filterEventy('active', this)">Активные</button>
+                                <button class="tab-btn" onclick="filterEventy('upcoming', this)">Скоро</button>
+                                <button class="tab-btn" onclick="filterEventy('marathon', this)">Марафоны</button>
+                                <button class="tab-btn" onclick="filterEventy('tournament', this)">Турниры</button>
+                                <button class="tab-btn" onclick="filterEventy('my', this)">Мои</button>
+                            </div>
+
+                            <!-- Мои активные события -->
+                            <div id="my-active-events" class="mb-8">
+                                <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                                    <span>⭐</span> Мои активные события
+                                </h3>
+                                <div id="my-active-events-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <p class="text-gray-400 col-span-2 text-center py-4">Загрузка...</p>
+                                </div>
+                            </div>
+
+                            <!-- Все события -->
+                            <div>
+                                <h3 class="text-xl font-bold mb-4">📅 Все события</h3>
+                                <div id="all-events-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <p class="text-gray-400 col-span-3 text-center py-8">Загрузка событий...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Детальный просмотр события -->
+                        <div id="event-detail-view" class="hidden">
+                            <button onclick="vernutsyaKSpiskuEventov()" class="btn-secondary mb-4">← Назад к списку</button>
+
+                            <!-- Шапка события -->
+                            <div class="glass-card p-6 mb-6">
+                                <div class="flex flex-wrap justify-between items-start gap-4">
+                                    <div>
+                                        <div class="flex items-center gap-3 mb-2">
+                                            <span class="event-badge" id="event-detail-badge">Турнир</span>
+                                            <span class="event-status" id="event-detail-status">Активен</span>
+                                        </div>
+                                        <h2 class="text-3xl font-bold mb-2" id="event-detail-name">Название события</h2>
+                                        <p class="text-gray-400" id="event-detail-description">Описание события</p>
+                                    </div>
+                                    <div id="event-join-section" class="text-right">
+                                        <div class="text-sm text-gray-400 mb-2">
+                                            <span id="event-detail-participants">0</span> / <span id="event-detail-max">100</span> участников
+                                        </div>
+                                        <button id="event-join-btn" onclick="prisoedinitsyaKEventu()" class="btn-success">
+                                            Участвовать
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Таймер -->
+                                <div id="event-timer-section" class="mt-6 event-timer">
+                                    <div class="text-sm text-gray-400 mb-2" id="event-timer-label">До окончания:</div>
+                                    <div class="countdown-timer" id="event-countdown">
+                                        <div class="countdown-unit">
+                                            <div class="countdown-value" id="countdown-days">00</div>
+                                            <div class="countdown-label">дней</div>
+                                        </div>
+                                        <div class="countdown-unit">
+                                            <div class="countdown-value" id="countdown-hours">00</div>
+                                            <div class="countdown-label">часов</div>
+                                        </div>
+                                        <div class="countdown-unit">
+                                            <div class="countdown-value" id="countdown-minutes">00</div>
+                                            <div class="countdown-label">минут</div>
+                                        </div>
+                                        <div class="countdown-unit">
+                                            <div class="countdown-value" id="countdown-seconds">00</div>
+                                            <div class="countdown-label">секунд</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Моя статистика -->
+                                <div id="my-event-stats" class="hidden mt-6 p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                                    <h4 class="font-bold mb-3">📊 Моя статистика</h4>
+                                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                                        <div class="text-center">
+                                            <div class="text-2xl font-bold text-yellow-400" id="my-event-rank">#-</div>
+                                            <div class="text-xs text-gray-400">Место</div>
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="text-2xl font-bold text-purple-400" id="my-event-score">0</div>
+                                            <div class="text-xs text-gray-400">Очки</div>
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="text-2xl font-bold" id="my-event-tasks">0</div>
+                                            <div class="text-xs text-gray-400">Задач</div>
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="text-2xl font-bold" id="my-event-matches">0</div>
+                                            <div class="text-xs text-gray-400">Матчей</div>
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="text-2xl font-bold text-green-400" id="my-event-wins">0</div>
+                                            <div class="text-xs text-gray-400">Побед</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Табы контента события -->
+                            <div class="tabs-container">
+                                <button class="tab-btn active" onclick="pokazatEventTab('leaderboard', this)">🏅 Таблица лидеров</button>
+                                <button class="tab-btn" onclick="pokazatEventTab('rules', this)">📋 Правила</button>
+                                <button class="tab-btn" onclick="pokazatEventTab('prizes', this)">🎁 Призы</button>
+                                <button class="tab-btn" id="tab-activity" onclick="pokazatEventTab('activity', this)">📈 Активность</button>
+                                <button class="tab-btn" id="tab-matches" onclick="pokazatEventTab('matches', this)">⚔️ Матчи</button>
+                            </div>
+
+                            <!-- Таблица лидеров -->
+                            <div id="event-tab-leaderboard" class="glass-card p-6">
+                                <h3 class="text-xl font-bold mb-4">🏅 Таблица лидеров</h3>
+                                <div id="event-leaderboard-list">
+                                    <p class="text-gray-400 text-center py-8">Загрузка...</p>
+                                </div>
+                            </div>
+
+                            <!-- Правила -->
+                            <div id="event-tab-rules" class="hidden glass-card p-6">
+                                <h3 class="text-xl font-bold mb-4">📋 Правила</h3>
+                                <div id="event-rules-content">
+                                </div>
+                            </div>
+
+                            <!-- Призы -->
+                            <div id="event-tab-prizes" class="hidden glass-card p-6">
+                                <h3 class="text-xl font-bold mb-4">🎁 Призы</h3>
+                                <div id="event-prizes-content" class="prizes-container">
+                                </div>
+                            </div>
+
+                            <!-- Активность (для марафонов) -->
+                            <div id="event-tab-activity" class="hidden glass-card p-6">
+                                <h3 class="text-xl font-bold mb-4">📈 Последняя активность</h3>
+                                <div id="event-activity-list">
+                                    <p class="text-gray-400 text-center py-8">Загрузка...</p>
+                                </div>
+                            </div>
+
+                            <!-- Матчи (для турниров) -->
+                            <div id="event-tab-matches" class="hidden glass-card p-6">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="text-xl font-bold">⚔️ Матчи турнира</h3>
+                                    <div class="flex items-center gap-4">
+                                        <span class="text-gray-400">Раунд: <span id="tournament-current-round">1</span> / <span id="tournament-total-rounds">5</span></span>
+                                        <button id="start-round-btn" onclick="nachatRaundTurnira()" class="btn-primary hidden">Начать раунд</button>
+                                    </div>
+                                </div>
+                                <div id="tournament-matches-list">
+                                    <p class="text-gray-400 text-center py-8">Загрузка...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Форма создания события (только для админов) -->
+                        <div id="event-create-form" class="hidden glass-card p-6 max-w-2xl">
+                            <h3 class="text-xl font-bold mb-4">Создать событие</h3>
+
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-gray-400 mb-2">Название</label>
+                                    <input type="text" id="event-create-name" class="input-field" placeholder="Название события">
+                                </div>
+
+                                <div>
+                                    <label class="block text-gray-400 mb-2">Описание</label>
+                                    <textarea id="event-create-description" class="input-field" rows="3" placeholder="Описание события"></textarea>
+                                </div>
+
+                                <div>
+                                    <label class="block text-gray-400 mb-2">Тип</label>
+                                    <select id="event-create-type" class="input-field">
+                                        <option value="marathon">Марафон</option>
+                                        <option value="tournament">Турнир</option>
+                                    </select>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-gray-400 mb-2">Начало</label>
+                                        <input type="datetime-local" id="event-create-start" class="input-field">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-400 mb-2">Окончание</label>
+                                        <input type="datetime-local" id="event-create-end" class="input-field">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-gray-400 mb-2">Макс. участников</label>
+                                    <input type="number" id="event-create-max" class="input-field" value="100">
+                                </div>
+
+                                <div>
+                                    <label class="block text-gray-400 mb-2">Предметы (через запятую)</label>
+                                    <input type="text" id="event-create-subjects" class="input-field" placeholder="math, physics или all">
+                                </div>
+
+                                <div class="flex gap-4">
+                                    <button onclick="sozdatEvent()" class="btn-primary">Создать</button>
+                                    <button onclick="otmenitSozdanieEventa()" class="btn-secondary">Отмена</button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- секция результатов -->
+                    <section id="section-results" class="hidden fade-in">
+                        <h1 class="text-3xl font-bold mb-6">📊 Результаты боёв</h1>
+
+                        <div id="results-list-view">
+                            <div class="glass-card p-6 mb-6">
+                                <h3 class="text-xl font-bold mb-4">История матчей</h3>
+                                <div id="matches-history-list" class="space-y-3">
+                                    <p class="text-gray-400 text-center py-8">Загрузка истории...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="results-detail-view" class="hidden">
+                            <button onclick="vernutsyaKSpiskuMatchey()" class="btn-secondary mb-4">← Назад к списку</button>
+
+                            <div class="glass-card p-6 mb-6">
+                                <div class="flex justify-between items-center mb-6">
+                                    <div class="text-center">
+                                        <div class="text-gray-400 text-sm">Вы</div>
+                                        <div class="text-3xl font-bold text-green-400" id="detail-my-score">0</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-5xl" id="detail-result-emoji">⚔️</div>
+                                        <div class="font-bold mt-2" id="detail-result-text">Результат</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-gray-400 text-sm" id="detail-opp-name">Соперник</div>
+                                        <div class="text-3xl font-bold text-red-400" id="detail-opp-score">0</div>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                    <div class="stat-card">
+                                        <div class="text-sm text-gray-400">Предмет</div>
+                                        <div class="font-bold" id="detail-subject">-</div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="text-sm text-gray-400">Режим</div>
+                                        <div class="font-bold" id="detail-mode">-</div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="text-sm text-gray-400">Ваше ср. время</div>
+                                        <div class="font-bold" id="detail-avg-time">-</div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="text-sm text-gray-400">Рейтинг соперника</div>
+                                        <div class="font-bold" id="detail-opp-rating">-</div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4">
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-green-400">Вы</span>
+                                        <span class="text-red-400">Соперник</span>
+                                    </div>
+                                    <div class="comparison-bar">
+                                        <div class="my-part" id="detail-comparison-my" style="width: 50%"></div>
+                                        <div class="opp-part" id="detail-comparison-opp" style="width: 50%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="glass-card p-6">
+                                <h3 class="text-xl font-bold mb-4">Детали по заданиям</h3>
+                                <div id="tasks-details-list" class="space-y-4">
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- секция рейтинга -->
+                    <section id="section-leaderboard" class="hidden fade-in">
+                        <h1 class="text-3xl font-bold mb-6">🎖️ Таблица лидеров</h1>
+
+                        <div class="glass-card p-6">
+                            <div id="leaderboard-list" class="space-y-2">
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- секция профиля -->
+                    <section id="section-profile" class="hidden fade-in">
+                        <h1 class="text-3xl font-bold mb-6">👤 Профиль</h1>
+
+                        <div class="glass-card p-6 max-w-2xl mb-6">
+                            <div class="flex items-center gap-6 mb-6">
+                                <div class="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-3xl font-bold" id="profile-avatar">U</div>
+                                <div>
+                                    <h2 class="text-2xl font-bold" id="profile-name">Имя</h2>
+                                    <p class="text-gray-400" id="profile-email">email@example.com</p>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="flex justify-between mb-1">
+                                    <span>Уровень <span id="profile-level">1</span></span>
+                                    <span><span id="profile-xp">0</span> XP</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="profile-xp-bar" style="width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="stat-card">
+                                    <div class="text-2xl font-bold" id="profile-rating">1000</div>
+                                    <div class="text-gray-400 text-sm">Рейтинг</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="text-2xl font-bold" id="profile-winrate">0%</div>
+                                    <div class="text-gray-400 text-sm">Винрейт</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-card p-6 max-w-2xl">
+                            <h3 class="text-xl font-bold mb-4">Статистика по предметам</h3>
+                            <div id="subject-stats" class="space-y-3">
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- секция админки -->
+                    <section id="section-admin" class="hidden fade-in">
+                        <h1 class="text-3xl font-bold mb-6">⚙️ Панель администратора</h1>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="glass-card p-6">
+                                <h3 class="text-xl font-bold mb-4">Добавить задачу</h3>
+                                <div class="space-y-4">
+                                    <select id="admin-subject" class="input-field">
+                                        <option value="math">Математика</option>
+                                        <option value="physics">Физика</option>
+                                        <option value="russian">Русский язык</option>
+                                        <option value="history">История</option>
+                                        <option value="informatics">Информатика</option>
+                                    </select>
+                                    <select id="admin-difficulty" class="input-field">
+                                        <option value="easy">Лёгкая</option>
+                                        <option value="medium">Средняя</option>
+                                        <option value="hard">Сложная</option>
+                                    </select>
+                                    <input type="text" id="admin-topic" class="input-field" placeholder="Тема">
+                                    <textarea id="admin-question" class="input-field" placeholder="Вопрос" rows="2"></textarea>
+                                    <input type="text" id="admin-options" class="input-field" placeholder="Варианты через запятую">
+                                    <input type="text" id="admin-answer" class="input-field" placeholder="Правильный ответ">
+                                    <input type="text" id="admin-hint" class="input-field" placeholder="Подсказка">
+                                    <button onclick="dobavitZadachu()" class="btn-primary w-full">Добавить</button>
+                                </div>
+                            </div>
+
+                            <div class="glass-card p-6">
+                                <h3 class="text-xl font-bold mb-4">Генератор задач</h3>
+                                <div class="space-y-4">
+                                    <select id="gen-subject" class="input-field">
+                                        <option value="math">Математика</option>
+                                    </select>
+                                    <select id="gen-difficulty" class="input-field">
+                                        <option value="easy">Лёгкая</option>
+                                        <option value="medium">Средняя</option>
+                                        <option value="hard">Сложная</option>
+                                    </select>
+                                    <input type="number" id="gen-count" class="input-field" placeholder="Количество" value="10">
+                                    <button onclick="sgeneritovatZadachi()" class="btn-primary w-full">Сгенерировать</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-card p-6 mt-6">
+                            <h3 class="text-xl font-bold mb-4">Пользователи</h3>
+                            <div id="admin-users-list" class="overflow-auto max-h-96">
+                            </div>
+                        </div>
+                    </section>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // EduBattle Client v3.0
+        // с турнирами и марафонами
+        // ============================================
+
+        // глобальные переменные состояния
+        let tekushiyUser = null;
+        let tekushiyMatch = null;
+        let tekushiyEvent = null;
+        let treningZadachi = [];
+        let treningIndex = 0;
+        let treningPravilno = 0;
+        let treningTimer = null;
+        let treningSekundy = 0;
+        let zadachaStartTime = 0;
+
+        // websocket соединение
+        let wsConnection = null;
+        let wsReconnectTimer = null;
+        let wsPingInterval = null;
+        let pvpTimerInterval = null;
+        let pvpSekundy = 30;
+        let poiskInterval = null;
+        let posledniyMatchId = null;
+
+        // события
+        let vseEventy = [];
+        let moiEventy = [];
+        let eventCountdownInterval = null;
+        let currentEventFilter = 'all';
+
+        const API_URL = window.location.origin;
+
+        // ============================================
+        // генератор случайных чисел
+        // ============================================
+        let moySeed = Date.now();
+
+        function moyRandom() {
+            let a = 1103515245;
+            let c = 12345;
+            let m = 2147483648;
+            moySeed = (a * moySeed + c) % m;
+            let dop = Date.now() % 1000;
+            moySeed = (moySeed + dop) % m;
+            return moySeed / m;
+        }
+
+        function moyRandomInt(min, max) {
+            let r = moyRandom();
+            let razmer = max - min + 1;
+            return Math.floor(r * razmer) + min;
+        }
+
+        // ============================================
+        // вспомогательные функции
+        // ============================================
+
+        function moyIndexOf(massiv, znachenie, pole) {
+            let i = 0;
+            while (i < massiv.length) {
+                if (pole != undefined) {
+                    if (massiv[i][pole] === znachenie) {
+                        return i;
+                    }
+                } else {
+                    if (massiv[i] === znachenie) {
+                        return i;
+                    }
+                }
+                i = i + 1;
+            }
+            return -1;
+        }
+
+        function formatirovatVremya(sekundy) {
+            let min = Math.floor(sekundy / 60);
+            let sek = sekundy % 60;
+            let strMin = min < 10 ? '0' + min : '' + min;
+            let strSek = sek < 10 ? '0' + sek : '' + sek;
+            return strMin + ':' + strSek;
+        }
+
+        function formatirovatDatu(dateStr) {
+            if (!dateStr) return '-';
+            let d = new Date(dateStr);
+            let den = d.getDate();
+            let mesyac = d.getMonth() + 1;
+            let god = d.getFullYear();
+            let chas = d.getHours();
+            let min = d.getMinutes();
+            return `${den < 10 ? '0' + den : den}.${mesyac < 10 ? '0' + mesyac : mesyac}.${god} ${chas < 10 ? '0' + chas : chas}:${min < 10 ? '0' + min : min}`;
+        }
+
+        function poluchitNazvaniePredmeta(key) {
+            let predmety = {
+                'math': 'Математика',
+                'physics': 'Физика',
+                'russian': 'Русский язык',
+                'history': 'История',
+                'informatics': 'Информатика',
+                'all': 'Все предметы'
+            };
+            return predmety[key] || key;
+        }
+
+        // ============================================
+        // функции для работы с API
+        // ============================================
+
+        async function apiZapros(endpoint, options) {
+            if (options == undefined) {
+                options = {};
+            }
+
+            let url = API_URL + endpoint;
+
+            let nastroyki = {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+
+            if (options.method != undefined) {
+                nastroyki.method = options.method;
+            }
+            if (options.body != undefined) {
+                nastroyki.body = JSON.stringify(options.body);
+            }
+
+            try {
+                let response = await fetch(url, nastroyki);
+                let data = await response.json();
+
+                if (response.ok == false) {
+                    let msg = data.detail || 'Ошибка сервера';
+                    throw new Error(msg);
+                }
+
+                return data;
+            } catch (err) {
+                console.log('API ошибка:', err);
+                throw err;
+            }
+        }
+
+        // ============================================
+        // WebSocket функции
+        // ============================================
+
+        function podkluchitWebSocket(matchId) {
+            if (wsConnection != null) {
+                wsConnection.close();
+            }
+
+            obnovitWsStatus('connecting');
+
+            let wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            let wsUrl = wsProtocol + '//' + window.location.host + '/ws/match/' + matchId + '/' + tekushiyUser.id;
+
+            console.log('подключаюсь к вебсокету:', wsUrl);
+
+            wsConnection = new WebSocket(wsUrl);
+
+            wsConnection.onopen = function() {
+                console.log('вебсокет подключен');
+                obnovitWsStatus('connected');
+
+                wsConnection.send(JSON.stringify({
+                    type: 'get_state'
+                }));
+
+                if (wsPingInterval != null) {
+                    clearInterval(wsPingInterval);
+                    wsPingInterval = null;
+                }
+            };
+
+            wsConnection.onmessage = function(event) {
+                let data = JSON.parse(event.data);
+                obrabotkaWsSoobsheniya(data);
+            };
+
+            wsConnection.onclose = function() {
+                console.log('вебсокет отключился');
+                obnovitWsStatus('disconnected');
+
+                if (wsPingInterval != null) {
+                    clearInterval(wsPingInterval);
+                    wsPingInterval = null;
+                }
+
+                if (tekushiyMatch != null && tekushiyMatch.status === 'active') {
+                    wsReconnectTimer = setTimeout(function() {
+                        podkluchitWebSocket(matchId);
+                    }, 3000);
+                }
+            };
+
+            wsConnection.onerror = function(err) {
+                console.log('вебсокет ошибка:', err);
+                obnovitWsStatus('disconnected');
+            };
+        }
+
+        function obnovitWsStatus(status) {
+            let indicator = document.getElementById('ws-indicator');
+            let text = document.getElementById('ws-status-text');
+
+            indicator.className = 'ws-status';
+
+            if (status === 'connected') {
+                indicator.classList.add('ws-connected');
+                text.textContent = 'онлайн';
+            } else if (status === 'connecting') {
+                indicator.classList.add('ws-connecting');
+                text.textContent = 'подключение...';
+            } else {
+                indicator.classList.add('ws-disconnected');
+                text.textContent = 'офлайн';
+            }
+        }
+
+        function obrabotkaWsSoobsheniya(data) {
+            console.log('ws сообщение:', data);
+
+            let tip = data.type;
+
+            if (tip === 'server_ping') {
+                otpravitCherezWs({
+                    type: 'pong',
+                    timestamp: Date.now()
+                });
+                return;
+            }
+
+            if (tip === 'match_cancelled') {
+                console.log('Матч отменен сервером:', data.message);
+                alert(data.message || "Матч отменен из-за потери соединения");
+                resetPvP();
+                document.getElementById('pvp-setup').classList.remove('hidden');
+                document.getElementById('pvp-match').classList.add('hidden');
+                document.getElementById('pvp-searching').classList.add('hidden');
+                document.getElementById('pvp-result').classList.add('hidden');
+                return;
+            }
+
+            if (tip === 'pong') {
+                // ok
+            } else if (tip === 'state') {
+                if (data.data != null) {
+                    obnovitMatchIzWs(data.data);
+                }
+            } else if (tip === 'answer_result') {
+                let el1 = document.getElementById('pvp-my-score');
+                let el2 = document.getElementById('pvp-opp-score');
+
+                if (tekushiyMatch != null) {
+                    if (tekushiyMatch.am_player1 == true) {
+                        el1.textContent = data.player1_score;
+                        el2.textContent = data.player2_score;
+                    } else {
+                        el1.textContent = data.player2_score;
+                        el2.textContent = data.player1_score;
+                    }
+                    tekushiyMatch.player1_score = data.player1_score;
+                    tekushiyMatch.player2_score = data.player2_score;
+                }
+            } else if (tip === 'opponent_disconnected') {
+                console.log('Соперник отключился');
+            } else if (tip === 'user_connected') {
+                console.log('Пользователь подключился:', data.user_id);
+            }
+        }
+
+        function obnovitMatchIzWs(state) {
+            if (tekushiyMatch == null) return;
+
+            tekushiyMatch.my_score = state.my_score;
+            tekushiyMatch.opp_score = state.opp_score;
+            tekushiyMatch.am_player1 = state.am_player1;
+
+            document.getElementById('pvp-my-score').textContent = state.my_score;
+            document.getElementById('pvp-opp-score').textContent = state.opp_score;
+        }
+
+        function otpravitCherezWs(soobshenie) {
+            if (wsConnection != null && wsConnection.readyState === WebSocket.OPEN) {
+                wsConnection.send(JSON.stringify(soobshenie));
+                return true;
+            }
+            return false;
+        }
+
+        // ============================================
+        // авторизация
+        // ============================================
+
+        function pokazatRegistraciyu() {
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('register-form').classList.remove('hidden');
+            document.getElementById('auth-error').classList.add('hidden');
+        }
+
+        function pokazatVhod() {
+            document.getElementById('register-form').classList.add('hidden');
+            document.getElementById('login-form').classList.remove('hidden');
+            document.getElementById('auth-error').classList.add('hidden');
+        }
+
+        function pokazatOshibkuAuth(tekst) {
+            let el = document.getElementById('auth-error');
+            el.textContent = tekst;
+            el.classList.remove('hidden');
+        }
+
+        async function vypolnitVhod() {
+            let email = document.getElementById('login-email').value;
+            let password = document.getElementById('login-password').value;
+
+            if (email === '' || password === '') {
+                pokazatOshibkuAuth('Заполните все поля');
+                return;
+            }
+
+            try {
+                let result = await apiZapros('/api/login', {
+                    method: 'POST',
+                    body: { email: email, password: password }
+                });
+
+                if (result.success == true) {
+                    tekushiyUser = result.user;
+                    localStorage.setItem('edubattle_user', JSON.stringify(tekushiyUser));
+                    pokazatGlavniy();
+                }
+            } catch (err) {
+                pokazatOshibkuAuth(err.message);
+            }
+        }
+
+        async function vypolnitRegistraciyu() {
+            let name = document.getElementById('reg-name').value;
+            let email = document.getElementById('reg-email').value;
+            let password = document.getElementById('reg-password').value;
+
+            if (name === '' || email === '' || password === '') {
+                pokazatOshibkuAuth('Заполните все поля');
+                return;
+            }
+
+            if (password.length < 6) {
+                pokazatOshibkuAuth('Пароль минимум 6 символов');
+                return;
+            }
+
+            try {
+                let result = await apiZapros('/api/register', {
+                    method: 'POST',
+                    body: { name: name, email: email, password: password }
+                });
+
+                if (result.success == true) {
+                    tekushiyUser = result.user;
+                    localStorage.setItem('edubattle_user', JSON.stringify(tekushiyUser));
+                    pokazatGlavniy();
+                }
+            } catch (err) {
+                pokazatOshibkuAuth(err.message);
+            }
+        }
+
+        function vyjtiIzAkkunta() {
+            tekushiyUser = null;
+            localStorage.removeItem('edubattle_user');
+
+            if (wsConnection != null) {
+                wsConnection.close();
+                wsConnection = null;
+            }
+
+            if (wsPingInterval != null) {
+                clearInterval(wsPingInterval);
+                wsPingInterval = null;
+            }
+
+            document.getElementById('main-screen').classList.add('hidden');
+            document.getElementById('auth-screen').classList.remove('hidden');
+        }
+
+        // ============================================
+        // навигация
+        // ============================================
+
+        function pokazatSekciyu(name) {
+            let vse = document.querySelectorAll('[id^="section-"]');
+            let i = 0;
+            while (i < vse.length) {
+                vse[i].classList.add('hidden');
+                i = i + 1;
+            }
+
+            let navItems = document.querySelectorAll('.nav-item');
+            let j = 0;
+            while (j < navItems.length) {
+                navItems[j].classList.remove('active');
+                j = j + 1;
+            }
+
+            let sekcia = document.getElementById('section-' + name);
+            if (sekcia != null) {
+                sekcia.classList.remove('hidden');
+            }
+
+            let navItem = document.querySelector('[data-section="' + name + '"]');
+            if (navItem != null) {
+                navItem.classList.add('active');
+            }
+
+            if (name === 'leaderboard') {
+                zagruzitLiderboard();
+            } else if (name === 'dashboard') {
+                obnovitDashboard();
+            } else if (name === 'admin') {
+                zagruzitAdminData();
+            } else if (name === 'results') {
+                zagruzitIstoiyuMatchey();
+            } else if (name === 'events') {
+                zagruzitEventy();
+            }
+        }
+
+        // ============================================
+        // главный экран
+        // ============================================
+
+        async function pokazatGlavniy() {
+            document.getElementById('loading-screen').classList.add('hidden');
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('main-screen').classList.remove('hidden');
+
+            obnovitUserInfo();
+            obnovitDashboard();
+
+            if (tekushiyUser.isAdmin == true) {
+                document.getElementById('admin-nav').classList.remove('hidden');
+                document.getElementById('admin-event-btn').classList.remove('hidden');
+            }
+        }
+
+        function obnovitUserInfo() {
+            let imya = tekushiyUser.name;
+            let pervayaBukva = imya.charAt(0).toUpperCase();
+
+            document.getElementById('user-avatar').textContent = pervayaBukva;
+            document.getElementById('user-name-sidebar').textContent = imya;
+            document.getElementById('user-level-sidebar').textContent = tekushiyUser.level;
+            document.getElementById('welcome-name').textContent = imya;
+
+            document.getElementById('profile-avatar').textContent = pervayaBukva;
+            document.getElementById('profile-name').textContent = imya;
+            document.getElementById('profile-email').textContent = tekushiyUser.email;
+            document.getElementById('profile-level').textContent = tekushiyUser.level;
+            document.getElementById('profile-xp').textContent = tekushiyUser.xp;
+            document.getElementById('profile-rating').textContent = tekushiyUser.rating;
+
+            let xpDlyaLvla = tekushiyUser.level * 100;
+            let ostatok = tekushiyUser.xp % xpDlyaLvla;
+            let procent = (ostatok / xpDlyaLvla) * 100;
+            document.getElementById('profile-xp-bar').style.width = procent + '%';
+
+            let wins = tekushiyUser.stats.wins || 0;
+            let losses = tekushiyUser.stats.losses || 0;
+            let vsego = wins + losses;
+            let winrate = vsego > 0 ? Math.round(wins / vsego * 100) : 0;
+            document.getElementById('profile-winrate').textContent = winrate + '%';
+        }
+
+        async function obnovitDashboard() {
+            let stats = tekushiyUser.stats || {};
+
+            let solved = stats.solved || 0;
+            let correct = stats.correct || 0;
+            let wins = stats.wins || 0;
+
+            document.getElementById('stat-solved').textContent = solved;
+            document.getElementById('stat-wins').textContent = wins;
+            document.getElementById('stat-rating').textContent = tekushiyUser.rating;
+
+            let tochnost = solved > 0 ? Math.round(correct / solved * 100) : 0;
+            document.getElementById('stat-correct').textContent = tochnost + '%';
+
+            pokazatDostizheniya();
+            pokazatIstoriyu();
+            await zagruzitGrafikPoDnyam();
+            pokazatStatistikuPredmetov();
+            await zagruzitDashboardEventy();
+        }
+
+        async function zagruzitDashboardEventy() {
+            let konteyner = document.getElementById('dashboard-events-list');
+
+            try {
+                let data = await apiZapros('/api/events?status=active');
+                let events = data.events || [];
+
+                if (events.length === 0) {
+                    konteyner.innerHTML = '<p class="text-gray-400 col-span-2 text-center py-4">Нет активных событий</p>';
+                    return;
+                }
+
+                let html = '';
+                let pokazano = 0;
+                let i = 0;
+
+                while (i < events.length && pokazano < 4) {
+                    let e = events[i];
+                    html += sozdatMiniKartochkuEventa(e);
+                    pokazano++;
+                    i++;
+                }
+
+                konteyner.innerHTML = html;
+
+            } catch (err) {
+                console.log('ошибка загрузки событий для дашборда:', err);
+                konteyner.innerHTML = '<p class="text-gray-400 col-span-2 text-center py-4">Ошибка загрузки</p>';
+            }
+        }
+
+        function sozdatMiniKartochkuEventa(event) {
+            let typeClass = event.type === 'marathon' ? 'marathon' : 'tournament';
+            let typeIcon = event.type === 'marathon' ? '🏃' : '🏆';
+            let typeName = event.type === 'marathon' ? 'Марафон' : 'Турнир';
+
+            return `
+                <div class="event-card ${typeClass}" onclick="otkrytEvent(${event.id})" style="padding: 16px;">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="event-badge ${typeClass}" style="padding: 4px 8px; font-size: 10px;">
+                            ${typeIcon} ${typeName}
+                        </span>
+                    </div>
+                    <h4 class="font-bold truncate">${event.name}</h4>
+                    <p class="text-sm text-gray-400 mt-1">${event.current_participants} участников</p>
+                </div>
+            `;
+        }
+
+        function pokazatDostizheniya() {
+            let konteyner = document.getElementById('achievements-list');
+            let achi = tekushiyUser.achievements || [];
+
+            let achievementData = {
+                'first_task': { icon: '🎯', name: 'Первый шаг' },
+                'ten_tasks': { icon: '📚', name: 'Начинающий' },
+                'fifty_tasks': { icon: '🔥', name: 'Упорный' },
+                'first_win': { icon: '🏆', name: 'Победитель' },
+                'ten_wins': { icon: '⚔️', name: 'Боец' }
+            };
+
+            let html = '';
+
+            for (let key in achievementData) {
+                let data = achievementData[key];
+                let polucheno = moyIndexOf(achi, key) !== -1;
+                let opacity = polucheno ? '' : 'opacity-30';
+
+                html += `<div class="text-center ${opacity}" title="${data.name}">
+                    <div class="achievement-badge mx-auto mb-1">${data.icon}</div>
+                    <div class="text-xs">${data.name}</div>
+                </div>`;
+            }
+
+            konteyner.innerHTML = html;
+        }
+
+        function pokazatIstoriyu() {
+            let konteyner = document.getElementById('activity-list');
+            let istoriya = tekushiyUser.history || [];
+
+            if (istoriya.length === 0) {
+                konteyner.innerHTML = '<p class="text-gray-400 text-center">Пока нет активности</p>';
+                return;
+            }
+
+            let html = '';
+            let start = istoriya.length - 1;
+            let count = 0;
+
+            while (start >= 0 && count < 10) {
+                let zapis = istoriya[start];
+                html += `<div class="flex justify-between items-center p-2 bg-white/5 rounded">
+                    <span>${zapis.text}</span>
+                    <span class="text-gray-400 text-sm">${zapis.date}</span>
+                </div>`;
+                start--;
+                count++;
+            }
+
+            konteyner.innerHTML = html;
+        }
+
+        async function zagruzitGrafikPoDnyam() {
+            try {
+                let data = await apiZapros('/api/user/' + tekushiyUser.id + '/daily_stats');
+
+                let labels = [];
+                let solvedData = [];
+                let correctData = [];
+
+                let i = 0;
+                while (i < data.stats.length) {
+                    labels.push(data.stats[i].day);
+                    solvedData.push(data.stats[i].solved);
+                    correctData.push(data.stats[i].correct);
+                    i++;
+                }
+
+                sozdatGrafik(labels, solvedData, correctData);
+
+            } catch (err) {
+                console.log('ошибка загрузки статистики:', err);
+                sozdatGrafik(['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'], [0,0,0,0,0,0,0], [0,0,0,0,0,0,0]);
+            }
+        }
+
+        let weeklyChart = null;
+
+        function sozdatGrafik(labels, solved, correct) {
+            let ctx = document.getElementById('weekly-chart');
+
+            if (weeklyChart != null) {
+                weeklyChart.destroy();
+            }
+
+            weeklyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Решено',
+                            data: solved,
+                            backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Правильно',
+                            data: correct,
+                            backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#e8e8e8' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#9ca3af' },
+                            grid: { color: 'rgba(255,255,255,0.05)' }
+                        },
+                        y: {
+                            ticks: { color: '#9ca3af' },
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function pokazatStatistikuPredmetov() {
+            let konteyner = document.getElementById('subject-stats');
+            let subjectStats = tekushiyUser.subjectStats || {};
+
+            let predmety = {
+                'math': 'Математика',
+                'physics': 'Физика',
+                'russian': 'Русский язык',
+                'history': 'История',
+                'informatics': 'Информатика'
+            };
+
+            let html = '';
+
+            for (let key in predmety) {
+                let stat = subjectStats[key] || { solved: 0, correct: 0 };
+                let procent = stat.solved > 0 ? Math.round(stat.correct / stat.solved * 100) : 0;
+
+                html += `<div class="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                    <span>${predmety[key]}</span>
+                    <div class="text-right">
+                        <span class="text-gray-400 mr-3">${stat.solved} задач</span>
+                        <span class="font-bold">${procent}%</span>
+                    </div>
+                </div>`;
+            }
+
+            konteyner.innerHTML = html;
+        }
+
+        // ============================================
+        // ТУРНИРЫ И МАРАФОНЫ
+        // ============================================
+
+        async function zagruzitEventy() {
+            await zagruzitMoiEventy();
+            await zagruzitVseEventy();
+        }
+
+        async function zagruzitMoiEventy() {
+            let konteyner = document.getElementById('my-active-events-list');
+
+            try {
+                let data = await apiZapros('/api/user/' + tekushiyUser.id + '/events');
+                moiEventy = data.active_events || [];
+
+                if (moiEventy.length === 0) {
+                    konteyner.innerHTML = '<p class="text-gray-400 col-span-2 text-center py-4">Вы пока не участвуете в событиях</p>';
+                    return;
+                }
+
+                let html = '';
+                let i = 0;
+                while (i < moiEventy.length) {
+                    html += sozdatKartochkuEventa(moiEventy[i], true);
+                    i++;
+                }
+
+                konteyner.innerHTML = html;
+
+            } catch (err) {
+                console.log('ошибка загрузки моих событий:', err);
+                konteyner.innerHTML = '<p class="text-gray-400 col-span-2 text-center py-4">Ошибка загрузки</p>';
+            }
+        }
+
+        async function zagruzitVseEventy() {
+            let konteyner = document.getElementById('all-events-list');
+
+            try {
+                let data = await apiZapros('/api/events');
+                vseEventy = data.events || [];
+
+                if (vseEventy.length === 0) {
+                    konteyner.innerHTML = '<p class="text-gray-400 col-span-3 text-center py-8">Нет доступных событий</p>';
+                    return;
+                }
+
+                pokazatOtfiltrovanniyeEventy();
+
+            } catch (err) {
+                console.log('ошибка загрузки событий:', err);
+                konteyner.innerHTML = '<p class="text-gray-400 col-span-3 text-center py-8">Ошибка загрузки</p>';
+            }
+        }
+
+        function filterEventy(filter, btn) {
+            currentEventFilter = filter;
+
+            // Обновляем активную кнопку
+            let allBtns = document.querySelectorAll('.tabs-container .tab-btn');
+            let i = 0;
+            while (i < allBtns.length) {
+                allBtns[i].classList.remove('active');
+                i++;
+            }
+            btn.classList.add('active');
+
+            pokazatOtfiltrovanniyeEventy();
+        }
+
+        function pokazatOtfiltrovanniyeEventy() {
+            let konteyner = document.getElementById('all-events-list');
+            let filtered = [];
+
+            let i = 0;
+            while (i < vseEventy.length) {
+                let e = vseEventy[i];
+                let podhodit = false;
+
+                if (currentEventFilter === 'all') {
+                    podhodit = true;
+                } else if (currentEventFilter === 'active') {
+                    podhodit = e.status === 'active';
+                } else if (currentEventFilter === 'upcoming') {
+                    podhodit = e.status === 'upcoming';
+                } else if (currentEventFilter === 'marathon') {
+                    podhodit = e.type === 'marathon';
+                } else if (currentEventFilter === 'tournament') {
+                    podhodit = e.type === 'tournament';
+                } else if (currentEventFilter === 'my') {
+                    // Проверяем участвуем ли мы
+                    let j = 0;
+                    while (j < moiEventy.length) {
+                        if (moiEventy[j].id === e.id) {
+                            podhodit = true;
+                            break;
+                        }
+                        j++;
+                    }
+                }
+
+                if (podhodit) {
+                    filtered.push(e);
+                }
+                i++;
+            }
+
+            if (filtered.length === 0) {
+                konteyner.innerHTML = '<p class="text-gray-400 col-span-3 text-center py-8">Нет событий по выбранному фильтру</p>';
+                return;
+            }
+
+            let html = '';
+            i = 0;
+            while (i < filtered.length) {
+                html += sozdatKartochkuEventa(filtered[i], false);
+                i++;
+            }
+
+            konteyner.innerHTML = html;
+        }
+
+        function sozdatKartochkuEventa(event, isMy) {
+            let typeClass = event.type === 'marathon' ? 'marathon' : 'tournament';
+            let typeIcon = event.type === 'marathon' ? '🏃' : '🏆';
+            let typeName = event.type === 'marathon' ? 'Марафон' : 'Турнир';
+
+            let statusClass = 'upcoming';
+            let statusText = 'Скоро';
+            if (event.status === 'active') {
+                statusClass = 'active';
+                statusText = 'Активен';
+            } else if (event.status === 'finished') {
+                statusClass = 'finished';
+                statusText = 'Завершён';
+            }
+
+            let description = event.description || 'Нет описания';
+            if (description.length > 100) {
+                description = description.substring(0, 97) + '...';
+            }
+
+            let subjects = event.rules?.subjects || ['all'];
+            let subjectsText = subjects.map(s => poluchitNazvaniePredmeta(s)).join(', ');
+
+            let myBadge = isMy ? '<span class="absolute top-2 right-2 bg-purple-500 text-xs px-2 py-1 rounded-full">Участвую</span>' : '';
+
+            return `
+                <div class="event-card ${typeClass}" onclick="otkrytEvent(${event.id})">
+                    ${myBadge}
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="event-badge ${typeClass}">
+                            ${typeIcon} ${typeName}
+                        </span>
+                        <span class="event-status ${statusClass}">
+                            <span class="w-2 h-2 rounded-full bg-current"></span>
+                            ${statusText}
+                        </span>
+                    </div>
+
+                    <h3 class="text-xl font-bold mb-2">${event.name}</h3>
+                    <p class="text-gray-400 text-sm mb-4">${description}</p>
+
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="text-xs bg-white/10 px-2 py-1 rounded">${subjectsText}</span>
+                    </div>
+
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-gray-400">
+                            👥 ${event.current_participants} / ${event.max_participants}
+                        </span>
+                        <span class="text-gray-400">
+                            📅 ${formatirovatDatu(event.end_time)}
+                        </span>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function otkrytEvent(eventId) {
+            try {
+                let event = await apiZapros('/api/events/' + eventId);
+                tekushiyEvent = event;
+
+                document.getElementById('events-list-view').classList.add('hidden');
+                document.getElementById('event-detail-view').classList.remove('hidden');
+                document.getElementById('event-create-form').classList.add('hidden');
+
+                zapolnitDetalyEventa(event);
+                zagruzitLiderbordEventa(eventId);
+
+                // Показываем/скрываем табы в зависимости от типа
+                if (event.type === 'marathon') {
+                    document.getElementById('tab-activity').classList.remove('hidden');
+                    document.getElementById('tab-matches').classList.add('hidden');
+                    zagruzitAktivnostMarafona(eventId);
+                } else {
+                    document.getElementById('tab-activity').classList.add('hidden');
+                    document.getElementById('tab-matches').classList.remove('hidden');
+                    zagruzitMatchiTurnira(eventId);
+                }
+
+                // Проверяем участие
+                await proveritUchastie(eventId);
+
+                // Запускаем таймер
+                zapustitCountdown(event);
+
+            } catch (err) {
+                console.log('ошибка открытия события:', err);
+                alert('Ошибка загрузки события');
+            }
+        }
+
+        function zapolnitDetalyEventa(event) {
+            let typeClass = event.type === 'marathon' ? 'marathon' : 'tournament';
+            let typeIcon = event.type === 'marathon' ? '🏃' : '🏆';
+            let typeName = event.type === 'marathon' ? 'Марафон' : 'Турнир';
+
+            document.getElementById('event-detail-badge').className = 'event-badge ' + typeClass;
+            document.getElementById('event-detail-badge').innerHTML = typeIcon + ' ' + typeName;
+
+            let statusClass = event.status === 'active' ? 'active' : (event.status === 'upcoming' ? 'upcoming' : 'finished');
+            let statusText = event.status === 'active' ? 'Активен' : (event.status === 'upcoming' ? 'Скоро' : 'Завершён');
+            document.getElementById('event-detail-status').className = 'event-status ' + statusClass;
+            document.getElementById('event-detail-status').textContent = statusText;
+
+            document.getElementById('event-detail-name').textContent = event.name;
+            document.getElementById('event-detail-description').textContent = event.description || 'Нет описания';
+            document.getElementById('event-detail-participants').textContent = event.current_participants;
+            document.getElementById('event-detail-max').textContent = event.max_participants;
+
+            // Правила
+            zapolnitPravila(event);
+
+            // Призы
+            zapolnitPrizy(event);
+        }
+
+        function zapolnitPravila(event) {
+            let konteyner = document.getElementById('event-rules-content');
+            let rules = event.rules || {};
+
+            let subjects = rules.subjects || ['all'];
+            let subjectsText = subjects.map(s => poluchitNazvaniePredmeta(s)).join(', ');
+
+            let html = '<ul class="rules-list">';
+
+            html += `<li>
+                <div class="rule-icon">📚</div>
+                <div>
+                    <div class="font-medium">Предметы</div>
+                    <div class="text-gray-400 text-sm">${subjectsText}</div>
+                </div>
+            </li>`;
+
+            if (rules.min_level) {
+                html += `<li>
+                    <div class="rule-icon">⭐</div>
+                    <div>
+                        <div class="font-medium">Минимальный уровень</div>
+                        <div class="text-gray-400 text-sm">${rules.min_level}</div>
+                    </div>
+                </li>`;
+            }
+
+            if (event.type === 'marathon' && rules.scoring) {
+                let scoring = rules.scoring;
+                html += `<li>
+                    <div class="rule-icon">🎯</div>
+                    <div>
+                        <div class="font-medium">Начисление очков</div>
+                        <div class="text-gray-400 text-sm">
+                            Тренировка: ${scoring.training_task || 10} очков за задачу<br>
+                            PvP победа: ${scoring.pvp_win || 50} очков<br>
+                            PvP ничья: ${scoring.pvp_draw || 20} очков<br>
+                            PvP поражение: ${scoring.pvp_loss || 5} очков
+                        </div>
+                    </div>
+                </li>`;
+            }
+
+            if (event.type === 'tournament') {
+                html += `<li>
+                    <div class="rule-icon">🏆</div>
+                    <div>
+                        <div class="font-medium">Раундов в турнире</div>
+                        <div class="text-gray-400 text-sm">${rules.rounds || 5}</div>
+                    </div>
+                </li>`;
+
+                html += `<li>
+                    <div class="rule-icon">❓</div>
+                    <div>
+                        <div class="font-medium">Заданий в матче</div>
+                        <div class="text-gray-400 text-sm">${rules.tasks_per_match || 5}</div>
+                    </div>
+                </li>`;
+            }
+
+            html += `<li>
+                <div class="rule-icon">📅</div>
+                <div>
+                    <div class="font-medium">Даты проведения</div>
+                    <div class="text-gray-400 text-sm">
+                        ${formatirovatDatu(event.start_time)} — ${formatirovatDatu(event.end_time)}
+                    </div>
+                </div>
+            </li>`;
+
+            html += '</ul>';
+            konteyner.innerHTML = html;
+        }
+
+        function zapolnitPrizy(event) {
+            let konteyner = document.getElementById('event-prizes-content');
+            let prizes = event.prizes || {};
+
+            let first = prizes.first || { xp: 500, title: 'Чемпион' };
+            let second = prizes.second || { xp: 300, title: 'Серебро' };
+            let third = prizes.third || { xp: 150, title: 'Бронза' };
+
+            let html = `
+                <div class="prize-card first">
+                    <div class="prize-icon">🥇</div>
+                    <div class="text-2xl font-bold text-yellow-400">1 место</div>
+                    <div class="text-gray-400 mt-2">${first.title}</div>
+                    <div class="text-xl font-bold mt-2">+${first.xp} XP</div>
+                </div>
+                <div class="prize-card second">
+                    <div class="prize-icon">🥈</div>
+                    <div class="text-2xl font-bold text-gray-300">2 место</div>
+                    <div class="text-gray-400 mt-2">${second.title}</div>
+                    <div class="text-xl font-bold mt-2">+${second.xp} XP</div>
+                </div>
+                <div class="prize-card third">
+                    <div class="prize-icon">🥉</div>
+                    <div class="text-2xl font-bold text-amber-600">3 место</div>
+                    <div class="text-gray-400 mt-2">${third.title}</div>
+                    <div class="text-xl font-bold mt-2">+${third.xp} XP</div>
+                </div>
+            `;
+
+            konteyner.innerHTML = html;
+        }
+
+        async function proveritUchastie(eventId) {
+            try {
+                let data = await apiZapros('/api/events/' + eventId + '/my_status?user_id=' + tekushiyUser.id);
+
+                if (data.participating) {
+                    document.getElementById('event-join-btn').textContent = 'Покинуть';
+                    document.getElementById('event-join-btn').className = 'btn-danger';
+                    document.getElementById('event-join-btn').onclick = function() { pokinutEvent(); };
+
+                    document.getElementById('my-event-stats').classList.remove('hidden');
+                    document.getElementById('my-event-rank').textContent = '#' + data.my_stats.rank;
+                    document.getElementById('my-event-score').textContent = data.my_stats.score;
+                    document.getElementById('my-event-tasks').textContent = data.my_stats.tasks_solved;
+                    document.getElementById('my-event-matches').textContent = data.my_stats.matches_played;
+                    document.getElementById('my-event-wins').textContent = data.my_stats.matches_won;
+                } else {
+                    document.getElementById('event-join-btn').textContent = 'Участвовать';
+                    document.getElementById('event-join-btn').className = 'btn-success';
+                    document.getElementById('event-join-btn').onclick = function() { prisoedinitsyaKEventu(); };
+
+                    document.getElementById('my-event-stats').classList.add('hidden');
+                }
+
+                // Скрываем кнопку для завершённых событий
+                if (tekushiyEvent.status === 'finished') {
+                    document.getElementById('event-join-btn').classList.add('hidden');
+                } else {
+                    document.getElementById('event-join-btn').classList.remove('hidden');
+                }
+
+            } catch (err) {
+                console.log('ошибка проверки участия:', err);
+            }
+        }
+
+        async function prisoedinitsyaKEventu() {
+            if (!tekushiyEvent) return;
+
+            try {
+                await apiZapros('/api/events/' + tekushiyEvent.id + '/join', {
+                    method: 'POST',
+                    body: { user_id: tekushiyUser.id }
+                });
+
+                alert('Вы успешно присоединились к событию!');
+                await proveritUchastie(tekushiyEvent.id);
+                await zagruzitLiderbordEventa(tekushiyEvent.id);
+
+            } catch (err) {
+                alert('Ошибка: ' + err.message);
+            }
+        }
+
+        async function pokinutEvent() {
+            if (!tekushiyEvent) return;
+
+            if (!confirm('Вы уверены, что хотите покинуть событие?')) return;
+
+            try {
+                await apiZapros('/api/events/' + tekushiyEvent.id + '/leave', {
+                    method: 'POST',
+                    body: { user_id: tekushiyUser.id }
+                });
+
+                alert('Вы покинули событие');
+                await proveritUchastie(tekushiyEvent.id);
+                await zagruzitLiderbordEventa(tekushiyEvent.id);
+
+            } catch (err) {
+                alert('Ошибка: ' + err.message);
+            }
+        }
+
+        function zapustitCountdown(event) {
+            if (eventCountdownInterval) {
+                clearInterval(eventCountdownInterval);
+            }
+
+            let targetDate;
+            let labelText;
+
+            if (event.status === 'upcoming') {
+                targetDate = new Date(event.start_time);
+                labelText = 'До начала:';
+            } else if (event.status === 'active') {
+                targetDate = new Date(event.end_time);
+                labelText = 'До окончания:';
+            } else {
+                document.getElementById('event-timer-section').classList.add('hidden');
+                return;
+            }
+
+            document.getElementById('event-timer-section').classList.remove('hidden');
+            document.getElementById('event-timer-label').textContent = labelText;
+
+            function obnovitTimer() {
+                let now = new Date();
+                let diff = targetDate - now;
+
+                if (diff <= 0) {
+                    clearInterval(eventCountdownInterval);
+                    document.getElementById('countdown-days').textContent = '00';
+                    document.getElementById('countdown-hours').textContent = '00';
+                    document.getElementById('countdown-minutes').textContent = '00';
+                    document.getElementById('countdown-seconds').textContent = '00';
+                    return;
+                }
+
+                let days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                let hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                let minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                let seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                document.getElementById('countdown-days').textContent = days < 10 ? '0' + days : days;
+                document.getElementById('countdown-hours').textContent = hours < 10 ? '0' + hours : hours;
+                document.getElementById('countdown-minutes').textContent = minutes < 10 ? '0' + minutes : minutes;
+                document.getElementById('countdown-seconds').textContent = seconds < 10 ? '0' + seconds : seconds;
+            }
+
+            obnovitTimer();
+            eventCountdownInterval = setInterval(obnovitTimer, 1000);
+        }
+
+        async function zagruzitLiderbordEventa(eventId) {
+            let konteyner = document.getElementById('event-leaderboard-list');
+
+            try {
+                let data = await apiZapros('/api/events/' + eventId + '/leaderboard?limit=50');
+                let leaderboard = data.leaderboard || [];
+
+                if (leaderboard.length === 0) {
+                    konteyner.innerHTML = '<p class="text-gray-400 text-center py-8">Пока нет участников</p>';
+                    return;
+                }
+
+                let html = '';
+                let i = 0;
+
+                while (i < leaderboard.length) {
+                    let p = leaderboard[i];
+                    let rowClass = '';
+                    let rankBadgeClass = 'default';
+                    let rankContent = p.rank;
+
+                    if (p.rank === 1) {
+                        rowClass = 'top-1';
+                        rankBadgeClass = 'gold';
+                        rankContent = '🥇';
+                    } else if (p.rank === 2) {
+                        rowClass = 'top-2';
+                        rankBadgeClass = 'silver';
+                        rankContent = '🥈';
+                    } else if (p.rank === 3) {
+                        rowClass = 'top-3';
+                        rankBadgeClass = 'bronze';
+                        rankContent = '🥉';
+                    }
+
+                    if (p.user_id === tekushiyUser.id) {
+                        rowClass += ' my-row';
+                    }
+
+                    html += `
+                        <div class="leaderboard-row ${rowClass}">
+                            <div class="rank-badge ${rankBadgeClass}">${rankContent}</div>
+                            <div class="flex-1">
+                                <div class="font-bold">${p.username}</div>
+                                <div class="text-sm text-gray-400">
+                                    Ур. ${p.level} • Рейтинг ${p.rating}
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-2xl font-bold text-purple-400">${p.score}</div>
+                                <div class="text-xs text-gray-400">очков</div>
+                            </div>
+                            <div class="text-right ml-6">
+                                <div class="text-sm">${p.tasks_correct}/${p.tasks_solved}</div>
+                                <div class="text-xs text-gray-400">задач</div>
+                            </div>
+                            <div class="text-right ml-6">
+                                <div class="text-sm text-green-400">${p.matches_won}</div>
+                                <div class="text-xs text-gray-400">побед</div>
+                            </div>
+                        </div>
+                    `;
+                    i++;
+                }
+
+                konteyner.innerHTML = html;
+
+            } catch (err) {
+                console.log('ошибка загрузки лидерборда:', err);
+                konteyner.innerHTML = '<p class="text-gray-400 text-center py-8">Ошибка загрузки</p>';
+            }
+        }
+
+        async function zagruzitAktivnostMarafona(eventId) {
+            let konteyner = document.getElementById('event-activity-list');
+
+            try {
+                let data = await apiZapros('/api/events/' + eventId + '/marathon/activity?limit=50');
+                let activity = data.activity || [];
+
+                if (activity.length === 0) {
+                    konteyner.innerHTML = '<p class="text-gray-400 text-center py-8">Пока нет активности</p>';
+                    return;
+                }
+
+                let html = '';
+                let i = 0;
+
+                while (i < activity.length) {
+                    let a = activity[i];
+                    let icon = '📚';
+                    let iconClass = 'training';
+                    let actionText = 'Тренировка';
+
+                    if (a.action_type === 'pvp_win') {
+                        icon = '🏆';
+                        iconClass = 'pvp_win';
+                        actionText = 'Победа в PvP';
+                    } else if (a.action_type === 'pvp_loss') {
+                        icon = '😔';
+                        iconClass = 'pvp_loss';
+                        actionText = 'Поражение в PvP';
+                    } else if (a.action_type === 'pvp_draw') {
+                        icon = '🤝';
+                        iconClass = 'pvp_draw';
+                        actionText = 'Ничья в PvP';
+                    }
+
+                    let details = '';
+                    if (a.details) {
+                        if (a.details.subject) {
+                            details = poluchitNazvaniePredmeta(a.details.subject);
+                        }
+                        if (a.details.opponent) {
+                            details = 'vs ' + a.details.opponent;
+                        }
+                        if (a.details.score) {
+                            details += ' (' + a.details.score + ')';
+                        }
+                    }
+
+                    html += `
+                        <div class="activity-item">
+                            <div class="activity-icon ${iconClass}">${icon}</div>
+                            <div class="flex-1">
+                                <div class="font-medium">${a.username || 'Участник'}</div>
+                                <div class="text-sm text-gray-400">${actionText} ${details}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-bold text-purple-400">+${a.points}</div>
+                                <div class="text-xs text-gray-400">${formatirovatDatu(a.created_at)}</div>
+                            </div>
+                        </div>
+                    `;
+                    i++;
+                }
+
+                konteyner.innerHTML = html;
+
+            } catch (err) {
+                console.log('ошибка загрузки активности:', err);
+                konteyner.innerHTML = '<p class="text-gray-400 text-center py-8">Ошибка загрузки</p>';
+            }
+        }
+
+        async function zagruzitMatchiTurnira(eventId) {
+            let konteyner = document.getElementById('tournament-matches-list');
+
+            try {
+                let data = await apiZapros('/api/events/' + eventId + '/tournament/matches');
+                let matches = data.matches || [];
+
+                document.getElementById('tournament-current-round').textContent = data.current_round || 0;
+                document.getElementById('tournament-total-rounds').textContent = data.total_rounds || 5;
+
+                // Показываем кнопку начала раунда для админа
+                if (tekushiyUser.isAdmin && tekushiyEvent.status === 'active') {
+                    document.getElementById('start-round-btn').classList.remove('hidden');
+                } else {
+                    document.getElementById('start-round-btn').classList.add('hidden');
+                }
+
+                if (matches.length === 0) {
+                    konteyner.innerHTML = '<p class="text-gray-400 text-center py-8">Матчи турнира ещё не начались</p>';
+                    return;
+                }
+
+                // Группируем по раундам
+                let rounds = {};
+                let i = 0;
+                while (i < matches.length) {
+                    let m = matches[i];
+                    if (!rounds[m.round_num]) {
+                        rounds[m.round_num] = [];
+                    }
+                    rounds[m.round_num].push(m);
+                    i++;
+                }
+
+                let html = '';
+
+                for (let roundNum in rounds) {
+                    html += `<div class="mb-6">
+                        <h4 class="text-lg font-bold mb-3">Раунд ${roundNum}</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
+
+                    let j = 0;
+                    while (j < rounds[roundNum].length) {
+                        let m = rounds[roundNum][j];
+                        let isMyMatch = (m.player1_id === tekushiyUser.id || m.player2_id === tekushiyUser.id);
+                        let matchClass = isMyMatch ? 'my-match' : '';
+                        if (m.status === 'finished') matchClass += ' finished';
+
+                        let p1Class = m.winner_id === m.player1_id ? 'winner' : (m.winner_id ? 'loser' : '');
+                        let p2Class = m.winner_id === m.player2_id ? 'winner' : (m.winner_id ? 'loser' : '');
+
+                        let actionBtn = '';
+                        if (m.status === 'pending' && isMyMatch && tekushiyEvent.status === 'active') {
+                            actionBtn = `<button onclick="nachatMatchTurnira(${eventId}, ${m.id})" class="btn-primary text-sm mt-2 w-full">Начать матч</button>`;
+                        } else if (m.status === 'active' && isMyMatch) {
+                            actionBtn = `<button onclick="prodolzhitMatchTurnira(${m.match_id})" class="btn-success text-sm mt-2 w-full">Продолжить</button>`;
+                        }
+
+                        html += `
+                            <div class="tournament-match ${matchClass}">
+                                <div class="player-slot ${p1Class}">
+                                    <span>${m.player1_name || 'TBD'}</span>
+                                    ${m.winner_id === m.player1_id ? '<span class="text-green-400">🏆</span>' : ''}
+                                </div>
+                                <div class="text-center text-sm text-gray-400 my-1">VS</div>
+                                <div class="player-slot ${p2Class}">
+                                    <span>${m.player2_name || 'TBD'}</span>
+                                    ${m.winner_id === m.player2_id ? '<span class="text-green-400">🏆</span>' : ''}
+                                </div>
+                                ${actionBtn}
+                            </div>
+                        `;
+                        j++;
+                    }
+
+                    html += '</div></div>';
+                }
+
+                konteyner.innerHTML = html;
+
+            } catch (err) {
+                console.log('ошибка загрузки матчей турнира:', err);
+                konteyner.innerHTML = '<p class="text-gray-400 text-center py-8">Ошибка загрузки</p>';
+            }
+        }
+
+        async function nachatRaundTurnira() {
+            if (!tekushiyEvent || !tekushiyUser.isAdmin) return;
+
+            try {
+                let result = await apiZapros('/api/events/' + tekushiyEvent.id + '/tournament/start_round?user_id=' + tekushiyUser.id, {
+                    method: 'POST'
+                });
+
+                alert('Раунд ' + result.round + ' начат! Создано матчей: ' + result.matches.length);
+                await zagruzitMatchiTurnira(tekushiyEvent.id);
+
+            } catch (err) {
+                alert('Ошибка: ' + err.message);
+            }
+        }
+
+        async function nachatMatchTurnira(eventId, tournamentMatchId) {
+            try {
+                let result = await apiZapros('/api/events/' + eventId + '/tournament/start_match/' + tournamentMatchId + '?user_id=' + tekushiyUser.id, {
+                    method: 'POST'
+                });
+
+                if (result.success && result.match) {
+                    // Переключаемся на секцию PvP
+                    pokazatSekciyu('pvp');
+                    nachatMatch(result.match);
+                }
+
+            } catch (err) {
+                alert('Ошибка: ' + err.message);
+            }
+        }
+
+        function prodolzhitMatchTurnira(matchId) {
+            // Просто переходим к активному матчу
+            pokazatSekciyu('pvp');
+            // TODO: загрузить и продолжить матч
+        }
+
+        function pokazatEventTab(tabName, btn) {
+            // Скрываем все табы
+            document.getElementById('event-tab-leaderboard').classList.add('hidden');
+            document.getElementById('event-tab-rules').classList.add('hidden');
+            document.getElementById('event-tab-prizes').classList.add('hidden');
+            document.getElementById('event-tab-activity').classList.add('hidden');
+            document.getElementById('event-tab-matches').classList.add('hidden');
+
+            // Показываем нужный
+            document.getElementById('event-tab-' + tabName).classList.remove('hidden');
+
+            // Обновляем кнопки
+            let allBtns = btn.parentElement.querySelectorAll('.tab-btn');
+            let i = 0;
+            while (i < allBtns.length) {
+                allBtns[i].classList.remove('active');
+                i++;
+            }
+            btn.classList.add('active');
+        }
+
+        function vernutsyaKSpiskuEventov() {
+            if (eventCountdownInterval) {
+                clearInterval(eventCountdownInterval);
+            }
+
+            document.getElementById('events-list-view').classList.remove('hidden');
+            document.getElementById('event-detail-view').classList.add('hidden');
+            document.getElementById('event-create-form').classList.add('hidden');
+
+            tekushiyEvent = null;
+        }
+
+        function pokazatFormuSozdaniyaEventa() {
+            document.getElementById('events-list-view').classList.add('hidden');
+            document.getElementById('event-detail-view').classList.add('hidden');
+            document.getElementById('event-create-form').classList.remove('hidden');
+        }
+
+        function otmenitSozdanieEventa() {
+            document.getElementById('events-list-view').classList.remove('hidden');
+            document.getElementById('event-create-form').classList.add('hidden');
+        }
+
+        async function sozdatEvent() {
+            let name = document.getElementById('event-create-name').value;
+            let description = document.getElementById('event-create-description').value;
+            let type = document.getElementById('event-create-type').value;
+            let start = document.getElementById('event-create-start').value;
+            let end = document.getElementById('event-create-end').value;
+            let max = parseInt(document.getElementById('event-create-max').value) || 100;
+            let subjectsStr = document.getElementById('event-create-subjects').value;
+
+            if (!name || !start || !end) {
+                alert('Заполните обязательные поля');
+                return;
+            }
+
+            let subjects = subjectsStr.split(',').map(s => s.trim()).filter(s => s);
+            if (subjects.length === 0) subjects = ['all'];
+
+            let rules = {
+                subjects: subjects,
+                min_level: 1
+            };
+
+            if (type === 'marathon') {
+                rules.scoring = {
+                    training_task: 10,
+                    pvp_win: 50,
+                    pvp_draw: 20,
+                    pvp_loss: 5
+                };
+            } else {
+                rules.rounds = 5;
+                rules.tasks_per_match = 5;
+                rules.points = { win: 3, draw: 1, loss: 0 };
+            }
+
+            try {
+                let result = await apiZapros('/api/events?user_id=' + tekushiyUser.id, {
+                    method: 'POST',
+                    body: {
+                        name: name,
+                        description: description,
+                        type: type,
+                        start_time: start,
+                        end_time: end,
+                        rules: rules,
+                        max_participants: max,
+                        prizes: {
+                            first: { xp: 500, title: 'Чемпион' },
+                            second: { xp: 300, title: 'Серебро' },
+                            third: { xp: 150, title: 'Бронза' }
+                        }
+                    }
+                });
+
+                if (result.success) {
+                    alert('Событие создано!');
+                    otmenitSozdanieEventa();
+                    await zagruzitEventy();
+                }
+
+            } catch (err) {
+                alert('Ошибка: ' + err.message);
+            }
+        }
+
+        // ============================================
+        // тренировка
+        // ============================================
+
+        async function nachatTrenirovku() {
+            let subject = document.getElementById('training-subject').value;
+            let difficulty = document.getElementById('training-difficulty').value;
+            let count = parseInt(document.getElementById('training-count').value);
+
+            try {
+                let result = await apiZapros('/api/training/start?subject=' + subject + '&difficulty=' + difficulty + '&count=' + count + '&user_id=' + tekushiyUser.id, {
+                    method: 'POST'
+                });
+
+                treningZadachi = result.tasks;
+                treningIndex = 0;
+                treningPravilno = 0;
+                treningSekundy = 0;
+
+                document.getElementById('training-setup').classList.add('hidden');
+                document.getElementById('training-active').classList.remove('hidden');
+                document.getElementById('training-results').classList.add('hidden');
+
+                document.getElementById('training-total').textContent = treningZadachi.length;
+
+                pokazatZadachuTraining();
+                zapustitTimer();
+
+            } catch (err) {
+                alert('Ошибка: ' + err.message);
+            }
+        }
+
+        function pokazatZadachuTraining() {
+            let zadacha = treningZadachi[treningIndex];
+
+            document.getElementById('training-current').textContent = treningIndex + 1;
+            document.getElementById('training-topic').textContent = zadacha.topic || 'Задача';
+            document.getElementById('training-question').textContent = zadacha.question;
+            document.getElementById('training-hint').classList.add('hidden');
+            document.getElementById('training-hint-text').textContent = zadacha.hint || '';
+
+            let progress = (treningIndex / treningZadachi.length) * 100;
+            document.getElementById('training-progress').style.width = progress + '%';
+
+            let konteyner = document.getElementById('training-options');
+            let html = '';
+
+            let i = 0;
+            while (i < zadacha.options.length) {
+                let opt = zadacha.options[i];
+                let optEscaped = opt.replace(/'/g, "\\'");
+                html += '<div class="task-option" onclick="vybratOtvetTraining(this, \'' + optEscaped + '\')">' + opt + '</div>';
+                i++;
+            }
+
+            konteyner.innerHTML = html;
+            document.getElementById('training-next-btn').disabled = true;
+
+            zadachaStartTime = Date.now();
+        }
+
+        function vybratOtvetTraining(element, otvet) {
+            let zadacha = treningZadachi[treningIndex];
+
+            let vse = document.querySelectorAll('#training-options .task-option');
+            let i = 0;
+            while (i < vse.length) {
+                vse[i].classList.remove('selected', 'correct', 'wrong');
+                i++;
+            }
+
+            let pravilno = (otvet === zadacha.answer);
+
+            if (pravilno) {
+                element.classList.add('correct');
+                treningPravilno++;
+            } else {
+                element.classList.add('wrong');
+                let j = 0;
+                while (j < vse.length) {
+                    if (vse[j].textContent === zadacha.answer) {
+                        vse[j].classList.add('correct');
+                    }
+                    j++;
+                }
+            }
+
+            document.getElementById('training-next-btn').disabled = false;
+        }
+
+        function pokazatPodskazku() {
+            document.getElementById('training-hint').classList.remove('hidden');
+        }
+
+        async function sleduushayaZadachaTraining() {
+            treningIndex++;
+
+            if (treningIndex >= treningZadachi.length) {
+                await zavershitTrenirovku();
+            } else {
+                pokazatZadachuTraining();
+            }
+        }
+
+        async function zavershitTrenirovku() {
+            ostanovitTimer();
+
+            let xpEarned = treningPravilno * 10 + Math.floor(treningSekundy / 10);
+            let subject = document.getElementById('training-subject').value;
+
+            try {
+                let result = await apiZapros('/api/training/result', {
+                    method: 'POST',
+                    body: {
+                        user_id: tekushiyUser.id,
+                        tasks_solved: treningZadachi.length,
+                        correct_count: treningPravilno,
+                        xp_earned: xpEarned,
+                        subject: subject
+                    }
+                });
+
+                if (result.success) {
+                    tekushiyUser = result.user;
+                    localStorage.setItem('edubattle_user', JSON.stringify(tekushiyUser));
+                    obnovitUserInfo();
+                }
+
+            } catch (err) {
+                console.log('ошибка сохранения результата:', err);
+            }
+
+            document.getElementById('training-active').classList.add('hidden');
+            document.getElementById('training-results').classList.remove('hidden');
+
+            document.getElementById('result-correct').textContent = treningPravilno;
+            document.getElementById('result-wrong').textContent = treningZadachi.length - treningPravilno;
+            document.getElementById('result-xp').textContent = '+' + xpEarned;
+        }
+
+        function zapustitTimer() {
+            treningTimer = setInterval(function() {
+                treningSekundy++;
+                document.getElementById('training-timer').textContent = formatirovatVremya(treningSekundy);
+            }, 1000);
+        }
+
+        function ostanovitTimer() {
+            if (treningTimer != null) {
+                clearInterval(treningTimer);
+                treningTimer = null;
+            }
+        }
+
+        function resetTrenirovku() {
+            document.getElementById('training-setup').classList.remove('hidden');
+            document.getElementById('training-active').classList.add('hidden');
+            document.getElementById('training-results').classList.add('hidden');
+
+            treningZadachi = [];
+            treningIndex = 0;
+            treningPravilno = 0;
+            treningSekundy = 0;
+        }
+
+        // ============================================
+        // PvP матчи
+        // ============================================
+
+        async function iskatSopernika() {
+            let subject = document.getElementById('pvp-subject').value;
+            let mode = document.getElementById('pvp-mode').value;
+
+            try {
+                let result = await apiZapros('/api/match/search', {
+                    method: 'POST',
+                    body: {
+                        user_id: tekushiyUser.id,
+                        subject: subject,
+                        mode: mode
+                    }
+                });
+
+                if (result.status === 'matched') {
+                    nachatMatch(result.match);
+                } else if (result.status === 'waiting') {
+                    document.getElementById('pvp-setup').classList.add('hidden');
+                    document.getElementById('pvp-searching').classList.remove('hidden');
+                    document.getElementById('queue-position').textContent = result.position;
+
+                    poiskInterval = setInterval(proveritOchered, 2000);
+                } else if (result.status === 'in_match') {
+                    let matchState = await apiZapros('/api/match/state/' + result.match_id + '?user_id=' + tekushiyUser.id);
+                    nachatMatch(matchState);
+                }
+
+            } catch (err) {
+                alert('Ошибка: ' + err.message);
+            }
+        }
+
+        async function proveritOchered() {
+            try {
+                let result = await apiZapros('/api/match/check_queue/' + tekushiyUser.id);
+
+                if (result.status === 'matched') {
+                    clearInterval(poiskInterval);
+                    nachatMatch(result.match);
+                } else if (result.status === 'waiting') {
+                    document.getElementById('queue-position').textContent = result.position;
+                } else if (result.status === 'not_in_queue') {
+                    clearInterval(poiskInterval);
+                    resetPvP();
+                }
+            } catch (err) {
+                console.log('ошибка проверки очереди:', err);
+            }
+        }
+
+        async function otmenitPoisk() {
+            if (poiskInterval != null) {
+                clearInterval(poiskInterval);
+            }
+
+            try {
+                await apiZapros('/api/match/cancel_search/' + tekushiyUser.id, { method: 'POST' });
+            } catch (err) {
+                console.log('ошибка отмены:', err);
+            }
+
+            resetPvP();
+        }
+
+        async function igratSBotom() {
+            if (poiskInterval != null) {
+                clearInterval(poiskInterval);
+            }
+
+            let subject = document.getElementById('pvp-subject').value;
+            let mode = document.getElementById('pvp-mode').value;
+
+            try {
+                let result = await apiZapros('/api/match/play_with_bot', {
+                    method: 'POST',
+                    body: {
+                        user_id: tekushiyUser.id,
+                        subject: subject,
+                        mode: mode
+                    }
+                });
+
+                if (result.success) {
+                    nachatMatch(result.match);
+                }
+            } catch (err) {
+                alert('Ошибка: ' + err.message);
+            }
+        }
+
+        let pvpIndex = 0;
+        let pvpOtvetyMoi = [];
+
+        function nachatMatch(match) {
+            tekushiyMatch = match;
+            pvpIndex = 0;
+            pvpOtvetyMoi = [];
+            posledniyMatchId = match.id;
+
+            tekushiyMatch.am_player1 = (match.player1_id === tekushiyUser.id);
+
+            document.getElementById('pvp-setup').classList.add('hidden');
+            document.getElementById('pvp-searching').classList.add('hidden');
+            document.getElementById('pvp-match').classList.remove('hidden');
+            document.getElementById('pvp-result').classList.add('hidden');
+
+            document.getElementById('pvp-my-name').textContent = tekushiyUser.name;
+
+            let oppName = match.player2_name || match.opp_name;
+            document.getElementById('pvp-opp-name').textContent = oppName;
+            document.getElementById('pvp-my-score').textContent = '0';
+            document.getElementById('pvp-opp-score').textContent = '0';
+
+            podkluchitWebSocket(match.id);
+            pokazatZadachuPvP();
+        }
+
+        function pokazatZadachuPvP() {
+            let tasks = tekushiyMatch.tasks;
+
+            if (pvpIndex >= tasks.length) {
+                zavershitPvP();
+                return;
+            }
+
+            let zadacha = tasks[pvpIndex];
+
+            document.getElementById('pvp-task-num').textContent = pvpIndex + 1;
+            document.getElementById('pvp-topic').textContent = zadacha.topic || 'Задача';
+            document.getElementById('pvp-question').textContent = zadacha.question;
+
+            let konteyner = document.getElementById('pvp-options');
+            let html = '';
+
+            let i = 0;
+            while (i < zadacha.options.length) {
+                let opt = zadacha.options[i];
+                let optEscaped = opt.replace(/'/g, "\\'");
+                html += '<div class="task-option" onclick="vybratOtvetPvP(this, \'' + optEscaped + '\')">' + opt + '</div>';
+                i++;
+            }
+
+            konteyner.innerHTML = html;
+            document.getElementById('pvp-next-btn').disabled = true;
+
+            pvpSekundy = 30;
+            document.getElementById('pvp-timer').textContent = pvpSekundy;
+
+            if (pvpTimerInterval != null) {
+                clearInterval(pvpTimerInterval);
+            }
+
+            pvpTimerInterval = setInterval(function() {
+                pvpSekundy--;
+                document.getElementById('pvp-timer').textContent = pvpSekundy;
+
+                if (pvpSekundy <= 0) {
+                    clearInterval(pvpTimerInterval);
+                    sleduushayaZadachaPvP();
+                }
+            }, 1000);
+
+            zadachaStartTime = Date.now();
+        }
+
+        async function vybratOtvetPvP(element, otvet) {
+            let zadacha = tekushiyMatch.tasks[pvpIndex];
+            let timeSpent = (Date.now() - zadachaStartTime) / 1000;
+
+            let vse = document.querySelectorAll('#pvp-options .task-option');
+            let i = 0;
+            while (i < vse.length) {
+                vse[i].classList.remove('selected', 'correct', 'wrong');
+                vse[i].onclick = null;
+                i++;
+            }
+
+            let pravilno = (otvet === zadacha.answer);
+
+            if (pravilno) {
+                element.classList.add('correct');
+            } else {
+                element.classList.add('wrong');
+                let j = 0;
+                while (j < vse.length) {
+                    if (vse[j].textContent === zadacha.answer) {
+                        vse[j].classList.add('correct');
+                    }
+                    j++;
+                }
+            }
+
+            pvpOtvetyMoi.push({
+                task_index: pvpIndex,
+                answer: otvet,
+                correct: pravilno,
+                time_spent: timeSpent
+            });
+
+            let wsOtpravleno = otpravitCherezWs({
+                type: 'answer',
+                task_index: pvpIndex,
+                answer: otvet,
+                time_spent: timeSpent
+            });
+
+            if (!wsOtpravleno) {
+                try {
+                    let result = await apiZapros('/api/match/answer', {
+                        method: 'POST',
+                        body: {
+                            match_id: tekushiyMatch.id,
+                            user_id: tekushiyUser.id,
+                            task_index: pvpIndex,
+                            answer: otvet,
+                            time_spent: timeSpent
+                        }
+                    });
+
+                    if (tekushiyMatch.am_player1) {
+                        document.getElementById('pvp-my-score').textContent = result.player1_score;
+                        document.getElementById('pvp-opp-score').textContent = result.player2_score;
+                    } else {
+                        document.getElementById('pvp-my-score').textContent = result.player2_score;
+                        document.getElementById('pvp-opp-score').textContent = result.player1_score;
+                    }
+
+                } catch (err) {
+                    console.log('ошибка отправки ответа:', err);
+                }
+            }
+
+            document.getElementById('pvp-next-btn').disabled = false;
+        }
+
+        function sleduushayaZadachaPvP() {
+            if (pvpTimerInterval != null) {
+                clearInterval(pvpTimerInterval);
+            }
+
+            pvpIndex++;
+
+            if (pvpIndex >= tekushiyMatch.tasks.length) {
+                zavershitPvP();
+            } else {
+                pokazatZadachuPvP();
+            }
+        }
+
+        async function zavershitPvP() {
+            if (pvpTimerInterval != null) {
+                clearInterval(pvpTimerInterval);
+            }
+
+            if (wsConnection != null) {
+                wsConnection.close();
+                wsConnection = null;
+            }
+
+            if (wsPingInterval != null) {
+                clearInterval(wsPingInterval);
+                wsPingInterval = null;
+            }
+
+            try {
+                let state = await apiZapros('/api/match/state/' + tekushiyMatch.id + '?user_id=' + tekushiyUser.id);
+
+                let myScore = state.my_score;
+                let oppScore = state.opp_score;
+
+                let result;
+                if (myScore > oppScore) {
+                    result = 'win';
+                } else if (myScore < oppScore) {
+                    result = 'loss';
+                } else {
+                    result = 'draw';
+                }
+
+                let endResult = await apiZapros('/api/match/end', {
+                    method: 'POST',
+                    body: {
+                        match_id: tekushiyMatch.id,
+                        user_id: tekushiyUser.id,
+                        result: result
+                    }
+                });
+
+                if (endResult.success) {
+                    tekushiyUser = endResult.user;
+                    localStorage.setItem('edubattle_user', JSON.stringify(tekushiyUser));
+                    obnovitUserInfo();
+
+                    posledniyMatchId = endResult.match_id;
+                }
+
+                document.getElementById('pvp-match').classList.add('hidden');
+                document.getElementById('pvp-result').classList.remove('hidden');
+
+                if (result === 'win') {
+                    document.getElementById('pvp-result-emoji').textContent = '🏆';
+                    document.getElementById('pvp-result-title').textContent = 'Победа!';
+                } else if (result === 'loss') {
+                    document.getElementById('pvp-result-emoji').textContent = '😔';
+                    document.getElementById('pvp-result-title').textContent = 'Поражение';
+                } else {
+                    document.getElementById('pvp-result-emoji').textContent = '🤝';
+                    document.getElementById('pvp-result-title').textContent = 'Ничья';
+                }
+
+                document.getElementById('pvp-result-score').textContent = myScore + ' : ' + oppScore;
+
+                let ratingChange = endResult.rating_change || 0;
+                let znak = ratingChange >= 0 ? '+' : '';
+                document.getElementById('pvp-rating-change').textContent = 'Рейтинг: ' + znak + ratingChange;
+
+            } catch (err) {
+                console.log('ошибка завершения матча:', err);
+                resetPvP();
+            }
+        }
+
+        function resetPvP() {
+            if (pvpTimerInterval != null) {
+                clearInterval(pvpTimerInterval);
+            }
+            if (poiskInterval != null) {
+                clearInterval(poiskInterval);
+            }
+
+            if (wsConnection != null) {
+                wsConnection.close();
+                wsConnection = null;
+            }
+
+            if (wsPingInterval != null) {
+                clearInterval(wsPingInterval);
+                wsPingInterval = null;
+            }
+
+            tekushiyMatch = null;
+
+            document.getElementById('pvp-setup').classList.remove('hidden');
+            document.getElementById('pvp-searching').classList.add('hidden');
+            document.getElementById('pvp-match').classList.add('hidden');
+            document.getElementById('pvp-result').classList.add('hidden');
+        }
+
+        // ============================================
+        // просмотр результатов матчей
+        // ============================================
+
+        async function zagruzitIstoiyuMatchey() {
+            let konteyner = document.getElementById('matches-history-list');
+
+            try {
+                let data = await apiZapros('/api/user/' + tekushiyUser.id + '/match_history_detailed?limit=20');
+
+                if (data.matches.length === 0) {
+                    konteyner.innerHTML = '<p class="text-gray-400 text-center py-8">Пока нет сыгранных матчей</p>';
+                    return;
+                }
+
+                let html = '';
+
+                let i = 0;
+                while (i < data.matches.length) {
+                    let match = data.matches[i];
+
+                    let resultClass = '';
+                    let resultIcon = '';
+
+                    if (match.result === 'win') {
+                        resultClass = 'border-l-4 border-green-500';
+                        resultIcon = '🏆';
+                    } else if (match.result === 'loss') {
+                        resultClass = 'border-l-4 border-red-500';
+                        resultIcon = '😔';
+                    } else {
+                        resultClass = 'border-l-4 border-yellow-500';
+                        resultIcon = '🤝';
+                    }
+
+                    let predmetNazv = poluchitNazvaniePredmeta(match.subject);
+                    let botMarka = match.is_bot ? ' 🤖' : '';
+
+                    html += `<div class="match-result-card ${resultClass}" onclick="pokazatDetaliMatcha(${match.match_id})">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <span class="text-xl mr-2">${resultIcon}</span>
+                                <span class="font-bold">vs ${match.opponent}${botMarka}</span>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-lg font-bold">${match.my_score} : ${match.opp_score}</div>
+                                <div class="text-sm text-gray-400">${predmetNazv}</div>
+                            </div>
+                        </div>
+                    </div>`;
+
+                    i++;
+                }
+
+                konteyner.innerHTML = html;
+
+            } catch (err) {
+                console.log('ошибка загрузки истории:', err);
+                konteyner.innerHTML = '<p class="text-red-400 text-center py-8">Ошибка загрузки</p>';
+            }
+        }
+
+        async function pokazatDetaliMatcha(matchId) {
+            try {
+                let data = await apiZapros('/api/match/' + matchId + '/details?user_id=' + tekushiyUser.id);
+
+                document.getElementById('results-list-view').classList.add('hidden');
+                document.getElementById('results-detail-view').classList.remove('hidden');
+
+                let summary = data.summary;
+                let tasks = data.tasks;
+
+                document.getElementById('detail-my-score').textContent = summary.my_score;
+                document.getElementById('detail-opp-score').textContent = summary.opp_score;
+
+                let oppNameDisplay = summary.opp_name;
+                if (summary.is_bot) {
+                    oppNameDisplay += ' 🤖';
+                }
+                document.getElementById('detail-opp-name').textContent = oppNameDisplay;
+
+                if (summary.result === 'win') {
+                    document.getElementById('detail-result-emoji').textContent = '🏆';
+                    document.getElementById('detail-result-text').textContent = 'Победа';
+                } else if (summary.result === 'loss') {
+                    document.getElementById('detail-result-emoji').textContent = '😔';
+                    document.getElementById('detail-result-text').textContent = 'Поражение';
+                } else {
+                    document.getElementById('detail-result-emoji').textContent = '🤝';
+                    document.getElementById('detail-result-text').textContent = 'Ничья';
+                }
+
+                document.getElementById('detail-subject').textContent = poluchitNazvaniePredmeta(summary.subject);
+
+                let modeText = summary.mode === 'ranked' ? 'Рейтинговый' : 'Обычный';
+                document.getElementById('detail-mode').textContent = modeText;
+                document.getElementById('detail-avg-time').textContent = summary.my_avg_time + ' сек';
+                document.getElementById('detail-opp-rating').textContent = summary.opp_rating;
+
+                let total = summary.my_score + summary.opp_score;
+                let myPercent = total > 0 ? (summary.my_score / total) * 100 : 50;
+                let oppPercent = total > 0 ? (summary.opp_score / total) * 100 : 50;
+                document.getElementById('detail-comparison-my').style.width = myPercent + '%';
+                document.getElementById('detail-comparison-opp').style.width = oppPercent + '%';
+
+                let konteyner = document.getElementById('tasks-details-list');
+                let html = '';
+
+                let i = 0;
+                while (i < tasks.length) {
+                    let task = tasks[i];
+
+                    let myResultClass = task.my_correct ? 'text-green-400' : 'text-red-400';
+                    let myResultIcon = task.my_correct ? '✅' : '❌';
+                    let oppResultIcon = task.opp_correct ? '✅' : '❌';
+
+                    let taskTopic = task.topic || 'Общее';
+
+                    let myAnswerDisplay = task.my_answer || 'Нет ответа';
+
+                    let oppResultText = task.opp_correct ? 'Верно' : 'Неверно';
+
+                    html += `<div class="task-detail-row">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="flex-1">
+                                <div class="text-sm text-purple-400 mb-1">Задание ${i + 1} • ${taskTopic}</div>
+                                <div class="font-medium">${task.question}</div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mt-3">
+                            <div class="bg-white/5 p-3 rounded-lg">
+                                <div class="text-sm text-gray-400 mb-1">Ваш ответ ${myResultIcon}</div>
+                                <div class="${myResultClass} font-medium">${myAnswerDisplay}</div>
+                                <div class="text-xs text-gray-500 mt-1">Время: ${task.my_time} сек</div>
+                            </div>
+                            <div class="bg-white/5 p-3 rounded-lg">
+                                <div class="text-sm text-gray-400 mb-1">Соперник ${oppResultIcon}</div>
+                                <div class="font-medium">${oppResultText}</div>
+                                <div class="text-xs text-gray-500 mt-1">Время: ${task.opp_time} сек</div>
+                            </div>
+                        </div>
+                        <div class="mt-3 p-2 bg-green-500/10 border border-green-500/30 rounded">
+                            <span class="text-green-400 text-sm">Правильный ответ:</span>
+                            <span class="font-medium">${task.correct_answer}</span>
+                        </div>
+                        ${task.hint ? '<div class="mt-2 text-sm text-gray-400">💡 ' + task.hint + '</div>' : ''}
+                    </div>`;
+
+                    i++;
+                }
+
+                konteyner.innerHTML = html;
+
+            } catch (err) {
+                console.log('ошибка загрузки деталей:', err);
+                alert('Ошибка загрузки деталей матча');
+            }
+        }
+
+        function vernutsyaKSpiskuMatchey() {
+            document.getElementById('results-list-view').classList.remove('hidden');
+            document.getElementById('results-detail-view').classList.add('hidden');
+        }
+
+        function pokazatDetaliBoya() {
+            pokazatSekciyu('results');
+
+            if (posledniyMatchId != null) {
+                setTimeout(function() {
+                    pokazatDetaliMatcha(posledniyMatchId);
+                }, 300);
+            }
+        }
+
+        // ============================================
+        // рейтинг лидеров
+        // ============================================
+
+        async function zagruzitLiderboard() {
+            let konteyner = document.getElementById('leaderboard-list');
+
+            try {
+                let data = await apiZapros('/api/leaderboard?limit=20');
+
+                let html = '';
+
+                let i = 0;
+                while (i < data.length) {
+                    let user = data[i];
+                    let rank = user.rank;
+
+                    let medalya = '';
+                    if (rank === 1) {
+                        medalya = '🥇';
+                    } else if (rank === 2) {
+                        medalya = '🥈';
+                    } else if (rank === 3) {
+                        medalya = '🥉';
+                    } else {
+                        medalya = '#' + rank;
+                    }
+
+                    let moy = user.id === tekushiyUser.id ? 'bg-purple-500/20' : '';
+
+                    html += `<div class="flex items-center p-3 rounded-lg ${moy} hover:bg-white/5">
+                        <div class="w-12 text-center text-xl">${medalya}</div>
+                        <div class="flex-1">
+                            <div class="font-bold">${user.name}</div>
+                            <div class="text-sm text-gray-400">Уровень ${user.level} • ${user.wins} побед</div>
+                        </div>
+                        <div class="text-xl font-bold">${user.rating}</div>
+                    </div>`;
+
+                    i++;
+                }
+
+                konteyner.innerHTML = html;
+
+            } catch (err) {
+                konteyner.innerHTML = '<p class="text-red-400 text-center">Ошибка загрузки</p>';
+            }
+        }
+
+        // ============================================
+        // админка
+        // ============================================
+
+        async function zagruzitAdminData() {
+            try {
+                let users = await apiZapros('/api/admin/users');
+
+                let konteyner = document.getElementById('admin-users-list');
+                let html = '<table class="w-full">';
+                html += '<tr class="text-left text-gray-400"><th class="p-2">ID</th><th class="p-2">Имя</th><th class="p-2">Email</th><th class="p-2">Уровень</th><th class="p-2">Рейтинг</th></tr>';
+
+                let i = 0;
+                while (i < users.length) {
+                    let u = users[i];
+                    let adminMark = u.isAdmin ? ' 👑' : '';
+                    html += `<tr class="border-t border-white/10">
+                        <td class="p-2">${u.id}</td>
+                        <td class="p-2">${u.name}${adminMark}</td>
+                        <td class="p-2">${u.email}</td>
+                        <td class="p-2">${u.level}</td>
+                        <td class="p-2">${u.rating}</td>
+                    </tr>`;
+                    i++;
+                }
+
+                html += '</table>';
+                konteyner.innerHTML = html;
+
+            } catch (err) {
+                console.log('ошибка загрузки админки:', err);
+            }
+        }
+
+        async function dobavitZadachu() {
+            let optionsStr = document.getElementById('admin-options').value;
+            let optionsArr = optionsStr.split(',');
+            let chistyeOptions = [];
+
+            let i = 0;
+            while (i < optionsArr.length) {
+                let opt = optionsArr[i].trim();
+                if (opt !== '') {
+                    chistyeOptions.push(opt);
+                }
+                i++;
+            }
+
+            try {
+                let result = await apiZapros('/api/tasks', {
+                    method: 'POST',
+                    body: {
+                        subject: document.getElementById('admin-subject').value,
+                        difficulty: document.getElementById('admin-difficulty').value,
+                        topic: document.getElementById('admin-topic').value,
+                        question: document.getElementById('admin-question').value,
+                        options: chistyeOptions,
+                        answer: document.getElementById('admin-answer').value,
+                        hint: document.getElementById('admin-hint').value
+                    }
+                });
+
+                if (result.success) {
+                    alert('Задача добавлена!');
+                    document.getElementById('admin-topic').value = '';
+                    document.getElementById('admin-question').value = '';
+                    document.getElementById('admin-options').value = '';
+                    document.getElementById('admin-answer').value = '';
+                    document.getElementById('admin-hint').value = '';
+                }
+            } catch (err) {
+                alert('Ошибка: ' + err.message);
+            }
+        }
+
+        async function sgeneritovatZadachi() {
+            let subject = document.getElementById('gen-subject').value;
+            let difficulty = document.getElementById('gen-difficulty').value;
+            let count = document.getElementById('gen-count').value;
+
+            try {
+                let result = await apiZapros('/api/admin/generate?subject=' + subject + '&difficulty=' + difficulty + '&count=' + count, {
+                    method: 'POST'
+                });
+
+                if (result.success) {
+                    alert('Сгенерировано задач: ' + result.generated);
+                }
+            } catch (err) {
+                alert('Ошибка: ' + err.message);
+            }
+        }
+
+        // ============================================
+        // инициализация
+        // ============================================
+
+        window.onload = function() {
+            let saved = localStorage.getItem('edubattle_user');
+
+            if (saved != null) {
+                try {
+                    tekushiyUser = JSON.parse(saved);
+
+                    apiZapros('/api/user/' + tekushiyUser.id).then(function(userData) {
+                        tekushiyUser = userData;
+                        localStorage.setItem('edubattle_user', JSON.stringify(tekushiyUser));
+                        pokazatGlavniy();
+                    }).catch(function() {
+                        pokazatGlavniy();
+                    });
+
+                } catch (e) {
+                    localStorage.removeItem('edubattle_user');
+                    document.getElementById('loading-screen').classList.add('hidden');
+                    document.getElementById('auth-screen').classList.remove('hidden');
+                }
+            } else {
+                document.getElementById('loading-screen').classList.add('hidden');
+                document.getElementById('auth-screen').classList.remove('hidden');
+            }
+        };
+    </script>
+</body>
+</html>
