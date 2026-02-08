@@ -30,7 +30,7 @@ except ImportError:
 TELEGRAM_BOT_TOKEN = "7912614847:AAG2IFtrCvaqSAy6pSZoBE3N8CAcvxtlqUo"
 
 # OpenRouter API ключ
-OPENROUTER_API_KEY = "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"
+OPENROUTER_API_KEY = "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"
 
 # Главный аккаунт администратора
 MAIN_ADMIN_TG_ID = os.getenv("MAIN_ADMIN_TG_ID", "5224328073")
