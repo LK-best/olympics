@@ -3,7 +3,6 @@
 
 import asyncio
 import sqlite3
-from datetime import datetime
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
