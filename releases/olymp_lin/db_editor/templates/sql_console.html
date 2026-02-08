@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}SQL Консоль — DB Editor{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="bi bi-terminal"></i> SQL Консоль</h1>
+
+<div class="row">
+    <div class="col-lg-3">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-list"></i> Таблицы
+            </div>
+            <div class="list-group list-group-flush">
+                {% for table in tables %}
+                <button type="button" class="list-group-item list-group-item-action"
+                        onclick="insertTable('{{ table }}')">
+                    <i class="bi bi-table"></i> {{ table }}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-9">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-code"></i> SQL Запрос
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <textarea class="form-control font-monospace" name="query" id="sqlQuery"
+                              rows="6" placeholder="SELECT * FROM users LIMIT 10;">{{ query }}</textarea>
+                    <div class="mt-3 d-flex justify-content-between">
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                    onclick="insertSQL('SELECT * FROM ')">SELECT</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                    onclick="insertSQL('INSERT INTO ')">INSERT</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                    onclick="insertSQL('UPDATE ')">UPDATE</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                    onclick="insertSQL('DELETE FROM ')">DELETE</button>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-play-fill"></i> Выполнить
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle"></i> <strong>Ошибка:</strong> {{ error }}
+        </div>
+        {% endif %}
+
+        {% if result %}
+            {% if result.message %}
+            <div class="alert alert-success">
+                <i class="bi bi-check-circle"></i> {{ result.message }}
+            </div>
+            {% elif result.rows %}
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-table"></i> Результат ({{ result.rows|length }} строк)
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    {% for col in result.columns %}
+                                    <th>{{ col }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in result.rows %}
+                                <tr>
+                                    {% for col in result.columns %}
+                                    <td>{{ row[col] if row[col] is not none else '<null>' }}</td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> Запрос выполнен, результаты отсутствуют
+            </div>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function insertSQL(text) {
+    const textarea = document.getElementById('sqlQuery');
+    const pos = textarea.selectionStart;
+    const before = textarea.value.substring(0, pos);
+    const after = textarea.value.substring(pos);
+    textarea.value = before + text + after;
+    textarea.focus();
+    textarea.selectionStart = textarea.selectionEnd = pos + text.length;
+}
+
+function insertTable(tableName) {
+    const textarea = document.getElementById('sqlQuery');
+    if (textarea.value.trim() === '') {
+        textarea.value = `SELECT * FROM ${tableName} LIMIT 100;`;
+    } else {
+        insertSQL(tableName);
+    }
+    textarea.focus();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,459 @@
+/* === Общие стили === */
+:root {
+    --primary-color: #4f46e5;
+    --dark-bg: #1e1e2e;
+    --card-bg: #ffffff;
+}
+
+body {
+    background-color: #f3f4f6;
+    min-height: 100vh;
+}
+
+/* === Страница входа === */
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
+}
+
+.login-card {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.login-header i {
+    font-size: 4rem;
+    color: var(--primary-color);
+    margin-bottom: 15px;
+}
+
+.login-header h2 {
+    margin-bottom: 5px;
+    font-weight: 700;
+}
+
+.login-form input {
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+}
+
+.telegram-auth {
+    text-align: center;
+}
+
+.login-footer {
+    text-align: center;
+}
+
+/* === Навигация === */
+.navbar {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.3rem;
+}
+
+/* === Карточки таблиц === */
+.table-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.table-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.table-icon {
+    font-size: 2.5rem;
+    color: #e5e7eb;
+}
+
+/* === Таблицы данных === */
+.table {
+    font-size: 0.9rem;
+}
+
+.table thead th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    border-bottom-width: 2px;
+}
+
+.cell-content {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.truncated {
+    cursor: help;
+}
+
+/* === SQL Консоль === */
+#sqlQuery {
+    font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+    font-size: 14px;
+    background-color: #1e1e2e;
+    color: #cdd6f4;
+    border: none;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+#sqlQuery:focus {
+    background-color: #1e1e2e;
+    color: #cdd6f4;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.3);
+}
+
+/* === Алерты === */
+.alert {
+    border: none;
+    border-radius: 10px;
+}
+
+/* === Кнопки === */
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: #4338ca;
+    border-color: #4338ca;
+}
+
+/* === Карточки === */
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e5e7eb;
+    font-weight: 600;
+    border-radius: 12px 12px 0 0 !important;
+}
+
+/* === Пагинация === */
+.pagination .page-link {
+    border-radius: 8px;
+    margin: 0 2px;
+    border: none;
+    color: #374151;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--primary-color);
+}
+
+/* === Формы === */
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+/* === Респонсив === */
+@media (max-width: 768px) {
+    .login-card {
+        padding: 30px 20px;
+    }
+
+    .table {
+        font-size: 0.8rem;
+    }
+
+    .cell-content {
+        max-width: 150px;
+    }
+}
+/* ... предыдущие стили ... */
+
+/* === AI Chat Styles === */
+
+.chat-card {
+    height: calc(100vh - 200px);
+    min-height: 500px;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+}
+
+.chat-welcome {
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.chat-message {
+    margin-bottom: 20px;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.user-message .message-content {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 18px 18px 4px 18px;
+    padding: 12px 18px;
+    margin-left: auto;
+    max-width: 80%;
+    box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+}
+
+.assistant-message .message-content {
+    background: white;
+    border-radius: 18px 18px 18px 4px;
+    padding: 12px 18px;
+    max-width: 90%;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.message-header {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.user-message .message-header {
+    text-align: right;
+    justify-content: flex-end;
+}
+
+.message-content.streaming {
+    border: 2px solid #667eea;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { border-color: #667eea; }
+    50% { border-color: #a78bfa; }
+}
+
+.typing-indicator {
+    display: flex;
+    gap: 4px;
+    padding: 8px 0;
+}
+
+.typing-indicator span {
+    width: 8px;
+    height: 8px;
+    background: #667eea;
+    border-radius: 50%;
+    animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-indicator span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes typing {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.6; }
+    40% { transform: scale(1); opacity: 1; }
+}
+
+/* JSON и code блоки в чате */
+.json-block,
+.code-block {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 10px 0;
+    overflow-x: auto;
+    font-size: 0.85rem;
+}
+
+.json-block code,
+.code-block code {
+    font-family: 'Fira Code', 'Monaco', monospace;
+}
+
+.message-content code {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+/* Tasks Panel */
+.tasks-panel {
+    max-height: calc(100vh - 350px);
+    overflow-y: auto;
+}
+
+.task-card {
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.task-card:hover {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+.task-card.task-added {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    border: 2px solid #10b981;
+}
+
+.task-card-header {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.task-card-body {
+    margin-bottom: 10px;
+}
+
+.task-question {
+    font-weight: 500;
+    color: #374151;
+    line-height: 1.4;
+}
+
+.task-card-footer {
+    display: flex;
+    gap: 8px;
+}
+
+.task-card-footer .btn {
+    flex: 1;
+}
+
+/* Toast Notifications */
+.toast-notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    border-radius: 10px;
+    color: white;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+    z-index: 9999;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.toast-notification.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast-notification.success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.toast-notification.error {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+/* Quick Prompt Buttons */
+.quick-prompt {
+    transition: all 0.2s ease;
+}
+
+.quick-prompt:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .chat-card {
+        height: 60vh;
+        min-height: 400px;
+    }
+
+    .tasks-panel {
+        max-height: 300px;
+        margin-top: 20px;
+    }
+}
+
+@media (max-width: 576px) {
+    .user-message .message-content,
+    .assistant-message .message-content {
+        max-width: 95%;
+    }
+
+    .task-card-footer {
+        flex-direction: column;
+    }
+}
+/* AI Gradient Card */
+.bg-gradient-ai {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 16px;
+}
+
+.bg-gradient-ai .btn-light:hover {
+    background: white;
+    transform: translateX(5px);
+    transition: all 0.3s ease;
+}
