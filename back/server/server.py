@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# EduBattle сервер
+# EduBattle сервер v3.2
 # + Активный heartbeat механизм
 # + Мгновенная отмена при отключении
 
@@ -547,6 +547,7 @@ def format_user_for_response(user):
         "name": user.get("name") or user.get("username"),
         "email": user.get("email"),
         "isAdmin": user.get("isAdmin", False) or user.get("is_admin", 0) == 1,
+        "isBanned": user.get("is_active", 1) == 0,  # ДОБАВЛЕНО
         "level": user.get("level", 1),
         "xp": user.get("xp", 0),
         "rating": user.get("rating", 1000),
@@ -656,6 +657,9 @@ class EventCreate(BaseModel):
 class EventJoin(BaseModel):
     user_id: int
 
+class BanData(BaseModel):
+    admin_id: int
+    reason: str = ""
 
 ###################################
 # WebSocket эндпоинт
@@ -663,6 +667,16 @@ class EventJoin(BaseModel):
 
 @app.websocket("/ws/match/{match_id}/{user_id}")
 async def websocket_match(websocket: WebSocket, match_id: int, user_id: int):
+    if db.proverit_ban(user_id):
+        await websocket.accept()
+        await websocket.send_json({
+            "type": "error",
+            "message": "Ваш аккаунт заблокирован",
+            "code": "BANNED"
+        })
+        await websocket.close(code=4003)
+        return
+
     await ws_manager.podkluchit(websocket, match_id, user_id)
 
     try:
@@ -933,6 +947,10 @@ def vhod(data: LoginData):
 
     if user.get("password_hash") != hesh:
         raise HTTPException(status_code=401, detail="Неверный email или пароль")
+
+    # ПРОВЕРКА БАНА
+    if user.get("is_active", 1) == 0:
+        raise HTTPException(status_code=403, detail="Ваш аккаунт заблокирован. Обратитесь к администратору.")
 
     otvet = format_user_for_response(user)
     return {"success": True, "user": otvet}
@@ -1321,6 +1339,9 @@ def iskat_match(data: MatchSearchData):
     if user == None:
         raise HTTPException(status_code=404, detail="Юзер не найден")
 
+    if db.proverit_ban(data.user_id):
+        raise HTTPException(status_code=403, detail="Ваш аккаунт заблокирован")
+
     poziciya = db.poluchit_poziciyu_v_ocheredi(data.user_id)
     if poziciya >= 0:
         ochered = db.poluchit_ochered()
@@ -1407,6 +1428,9 @@ def igrat_s_botom(data: MatchSearchData):
     user = db.poluchit_usera_po_id(data.user_id)
     if user == None:
         raise HTTPException(status_code=404, detail="Юзер не найден")
+
+    if db.proverit_ban(data.user_id):
+        raise HTTPException(status_code=403, detail="Ваш аккаунт заблокирован")
 
     db.ubrat_iz_ocheredi(data.user_id)
 
@@ -1904,6 +1928,7 @@ def admin_poluchit_userov():
             "name": u.get("name") or u.get("username"),
             "email": u.get("email"),
             "isAdmin": u.get("isAdmin", False) or u.get("is_admin", 0) == 1,
+            "isBanned": u.get("is_active", 1) == 0,  # ДОБАВЛЕНО
             "level": u.get("level", 1),
             "rating": u.get("rating", 1000),
             "solved": u.get("stats", {}).get("solved", 0) or u.get("solved_count", 0)
@@ -2403,7 +2428,7 @@ if __name__ == "__main__":
     print("+ Мгновенная отмена при отключении")
     print("+ Рейтинги НЕ меняются при отмене")
     print("=" * 50)
-    print("Открой http://localhost:8000")
+    print("Открой http://localhost:8080")
     print("Админ: admin@edu.ru / admin123")
     print("=" * 50)
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8080)
