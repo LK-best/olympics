@@ -64,7 +64,7 @@ def check_user_in_main_db(email: str, username: str) -> dict:
 
 def is_main_admin(user_id: int) -> bool:
     """Проверить, является ли пользователь главным администратором"""
-    return user_id == MAIN_ADMIN_TG_ID
+    return str(user_id) == str(MAIN_ADMIN_TG_ID).strip()
 
 
 # === Обработчики команд ===
