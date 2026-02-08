@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Добавление' if mode == 'add' else 'Редактирование' }} — {{ table_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    {% if mode == 'add' %}
+                    <i class="bi bi-plus-circle"></i> Новая запись в {{ table_name }}
+                    {% else %}
+                    <i class="bi bi-pencil"></i> Редактирование записи #{{ row.id }} в {{ table_name }}
+                    {% endif %}
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% for col in columns %}
+                    <div class="mb-3">
+                        <label for="{{ col.name }}" class="form-label">
+                            {{ col.name }}
+                            {% if col.pk %}<span class="badge bg-warning">PK</span>{% endif %}
+                            {% if col.notnull %}<span class="text-danger">*</span>{% endif %}
+                            <small class="text-muted">({{ col.type }})</small>
+                        </label>
+
+                        {% if col.name == 'id' and col.pk %}
+                            {% if mode == 'add' %}
+                            <input type="text" class="form-control" value="Автоматически" disabled>
+                            {% else %}
+                            <input type="text" class="form-control" value="{{ row[col.name] }}" disabled>
+                            {% endif %}
+                        {% elif col.type|upper in ['TEXT', 'VARCHAR'] and (col.name|lower in ['description', 'question', 'options', 'rules', 'prizes', 'details', 'stats', 'subject_stats']) %}
+                            <textarea class="form-control" name="{{ col.name }}" id="{{ col.name }}"
+                                      rows="4" {% if col.notnull %}required{% endif %}>{{ row[col.name] if row else '' }}</textarea>
+                        {% elif col.type|upper == 'INTEGER' and col.name|lower in ['is_admin', 'is_blocked', 'is_bot', 'generated_by_llm', 'used', 'is_active'] %}
+                            <select class="form-select" name="{{ col.name }}" id="{{ col.name }}">
+                                <option value="0" {% if row and row[col.name] == 0 %}selected{% endif %}>Нет (0)</option>
+                                <option value="1" {% if row and row[col.name] == 1 %}selected{% endif %}>Да (1)</option>
+                            </select>
+                        {% else %}
+                            <input type="{% if col.type|upper == 'INTEGER' %}number{% else %}text{% endif %}"
+                                   class="form-control"
+                                   name="{{ col.name }}"
+                                   id="{{ col.name }}"
+                                   value="{{ row[col.name] if row and row[col.name] is not none else '' }}"
+                                   {% if col.notnull and not col.dflt_value %}required{% endif %}>
+                        {% endif %}
+
+                        {% if col.dflt_value %}
+                        <small class="text-muted">По умолчанию: {{ col.dflt_value }}</small>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{{ url_for('view_table', table_name=table_name) }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Назад
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg"></i>
+                            {% if mode == 'add' %}Создать{% else %}Сохранить{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

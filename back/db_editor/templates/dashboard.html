@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Главная — DB Editor{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-speedometer2"></i> Панель управления
+        </h1>
+    </div>
+</div>
+
+<!-- AI Generator Card -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-gradient-ai text-white">
+            <div class="card-body d-flex justify-content-between align-items-center py-4">
+                <div>
+                    <h4 class="mb-2">
+                        <i class="bi bi-robot"></i> AI Генератор задач
+                    </h4>
+                    <p class="mb-0 opacity-75">
+                        Создавайте образовательные задачи с помощью DeepSeek R1
+                    </p>
+                </div>
+                <a href="{{ url_for('ai_tasks') }}" class="btn btn-light btn-lg">
+                    <i class="bi bi-arrow-right"></i> Открыть
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    {% for table in tables %}
+    <div class="col-md-4 col-lg-3">
+        <div class="card table-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5 class="card-title">
+                            <i class="bi bi-table text-primary"></i> {{ table }}
+                        </h5>
+                        <p class="card-text text-muted">
+                            <span class="badge bg-secondary">{{ stats[table] }} записей</span>
+                        </p>
+                    </div>
+                    <div class="table-icon">
+                        <i class="bi bi-database"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent">
+                <a href="{{ url_for('view_table', table_name=table) }}" class="btn btn-outline-primary btn-sm w-100">
+                    <i class="bi bi-eye"></i> Открыть
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-lightning-charge"></i> Быстрые действия
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <a href="{{ url_for('ai_tasks') }}" class="btn btn-outline-info w-100 py-3">
+                            <i class="bi bi-robot fs-4 d-block mb-2"></i>
+                            AI Генератор
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('sql_console') }}" class="btn btn-outline-secondary w-100 py-3">
+                            <i class="bi bi-terminal fs-4 d-block mb-2"></i>
+                            SQL Консоль
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('view_table', table_name='users') }}" class="btn btn-outline-secondary w-100 py-3">
+                            <i class="bi bi-people fs-4 d-block mb-2"></i>
+                            Пользователи
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('view_table', table_name='tasks') }}" class="btn btn-outline-secondary w-100 py-3">
+                            <i class="bi bi-list-task fs-4 d-block mb-2"></i>
+                            Задачи
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

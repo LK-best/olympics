@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}{{ table_name }} — DB Editor{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>
+        <i class="bi bi-table"></i> {{ table_name }}
+        <small class="text-muted fs-6">({{ data.total }} записей)</small>
+    </h1>
+    <a href="{{ url_for('add_row', table_name=table_name) }}" class="btn btn-success">
+        <i class="bi bi-plus-lg"></i> Добавить запись
+    </a>
+</div>
+
+<!-- Поиск и фильтры -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" name="search"
+                           value="{{ search }}" placeholder="Поиск по всем полям...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="order_by">
+                    <option value="">Сортировка...</option>
+                    {% for col in columns %}
+                    <option value="{{ col.name }}" {% if order_by == col.name %}selected{% endif %}>
+                        {{ col.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" name="order_dir">
+                    <option value="ASC" {% if order_dir == 'ASC' %}selected{% endif %}>По возрастанию</option>
+                    <option value="DESC" {% if order_dir == 'DESC' %}selected{% endif %}>По убыванию</option>
+                </select>
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Таблица данных -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        {% for col in columns %}
+                        <th>
+                            {{ col.name }}
+                            {% if col.pk %}<i class="bi bi-key-fill text-warning"></i>{% endif %}
+                        </th>
+                        {% endfor %}
+                        <th class="text-center" style="width: 120px;">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in data.rows %}
+                    <tr>
+                        {% for col in columns %}
+                        <td class="cell-content">
+                            {% set value = row[col.name] %}
+                            {% if value is none %}
+                                <span class="text-muted fst-italic">NULL</span>
+                            {% elif value|string|length > 100 %}
+                                <span class="truncated" title="{{ value }}">
+                                    {{ value|string|truncate(100) }}
+                                </span>
+                            {% else %}
+                                {{ value }}
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('edit_row', table_name=table_name, row_id=row.id) }}"
+                                   class="btn btn-outline-primary" title="Редактировать">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button type="button" class="btn btn-outline-danger"
+                                        onclick="deleteRow({{ row.id }})" title="Удалить">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="{{ columns|length + 1 }}" class="text-center text-muted py-5">
+                            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                            Нет данных
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Пагинация -->
+{% if data.pages > 1 %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        <li class="page-item {% if data.current_page == 1 %}disabled{% endif %}">
+            <a class="page-link" href="?page={{ data.current_page - 1 }}&search={{ search }}&order_by={{ order_by }}&order_dir={{ order_dir }}">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        </li>
+
+        {% for p in range(1, data.pages + 1) %}
+            {% if p == data.current_page %}
+            <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+            {% elif p == 1 or p == data.pages or (p >= data.current_page - 2 and p <= data.current_page + 2) %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ p }}&search={{ search }}&order_by={{ order_by }}&order_dir={{ order_dir }}">{{ p }}</a>
+            </li>
+            {% elif p == data.current_page - 3 or p == data.current_page + 3 %}
+            <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+        {% endfor %}
+
+        <li class="page-item {% if data.current_page == data.pages %}disabled{% endif %}">
+            <a class="page-link" href="?page={{ data.current_page + 1 }}&search={{ search }}&order_by={{ order_by }}&order_dir={{ order_dir }}">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+
+<!-- Модальное окно подтверждения удаления -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Подтверждение удаления</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить эту запись?</p>
+                <p class="text-danger"><strong>Это действие нельзя отменить!</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">Удалить</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let deleteRowId = null;
+const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+
+function deleteRow(id) {
+    deleteRowId = id;
+    deleteModal.show();
+}
+
+document.getElementById('confirmDelete').addEventListener('click', async function() {
+    if (!deleteRowId) return;
+
+    try {
+        const response = await fetch(`/table/{{ table_name }}/delete/${deleteRowId}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            location.reload();
+        } else {
+            alert('Ошибка: ' + result.error);
+        }
+    } catch (e) {
+        alert('Ошибка сети');
+    }
+
+    deleteModal.hide();
+});
+</script>
+{% endblock %}
