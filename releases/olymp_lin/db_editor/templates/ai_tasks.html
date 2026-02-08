@@ -39,19 +39,19 @@
                         <p class="small mb-2">Примеры запросов:</p>
                         <button class="btn btn-outline-primary btn-sm m-1 quick-prompt"
                                 data-prompt="Создай 3 задачи по математике на тему квадратных уравнений, средней сложности">
-                            📐 Квадратные уравнения
+                            Квадратные уравнения
                         </button>
                         <button class="btn btn-outline-primary btn-sm m-1 quick-prompt"
                                 data-prompt="Сгенерируй 2 сложные задачи по физике на тему механики">
-                            ⚡ Физика: механика
+                            Физика: механика
                         </button>
                         <button class="btn btn-outline-primary btn-sm m-1 quick-prompt"
                                 data-prompt="Придумай 3 простые задачи по информатике про системы счисления">
-                            💻 Системы счисления
+                            Системы счисления
                         </button>
                         <button class="btn btn-outline-primary btn-sm m-1 quick-prompt"
                                 data-prompt="Создай 2 задачи по истории России, уровень easy">
-                            📚 История России
+                            История России
                         </button>
                     </div>
                 </div>
@@ -444,7 +444,7 @@ document.getElementById('confirmAddTask').addEventListener('click', async functi
 async function sendMessage(message) {
     if (!message.trim() || isStreaming) return;
 
-    // Добавля��м сообщение пользователя
+    // Добавляем сообщение пользователя
     addMessage('user', escapeHtml(message));
     messagesCount++;
     updateStats();
