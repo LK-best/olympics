@@ -1,0 +1,591 @@
+{% extends "base.html" %}
+
+{% block title %}AI Генератор задач — DB Editor{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="bi bi-robot"></i> AI Генератор задач
+                <small class="text-muted fs-6">DeepSeek R1</small>
+            </h1>
+            <div class="btn-group">
+                <button class="btn btn-outline-secondary" onclick="clearChat()">
+                    <i class="bi bi-trash"></i> Очистить чат
+                </button>
+                <a href="{{ url_for('view_table', table_name='tasks') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-table"></i> К таблице задач
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Чат с AI -->
+    <div class="col-lg-8">
+        <div class="card chat-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-chat-dots"></i> Чат с AI</span>
+                <span class="badge bg-success" id="statusBadge">Готов</span>
+            </div>
+            <div class="card-body chat-body" id="chatBody">
+                <div class="chat-welcome text-center text-muted py-5" id="welcomeMessage">
+                    <i class="bi bi-lightbulb fs-1 mb-3 d-block"></i>
+                    <h5>Привет! Я помогу создать задачи</h5>
+                    <p>Опишите, какие задачи вам нужны, и я их сгенерирую.</p>
+                    <div class="mt-4">
+                        <p class="small mb-2">Примеры запросов:</p>
+                        <button class="btn btn-outline-primary btn-sm m-1 quick-prompt"
+                                data-prompt="Создай 3 задачи по математике на тему квадратных уравнений, средней сложности">
+                            📐 Квадратные уравнения
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm m-1 quick-prompt"
+                                data-prompt="Сгенерируй 2 сложные задачи по физике на тему механики">
+                            ⚡ Физика: механика
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm m-1 quick-prompt"
+                                data-prompt="Придумай 3 простые задачи по информатике про системы счисления">
+                            💻 Системы счисления
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm m-1 quick-prompt"
+                                data-prompt="Создай 2 задачи по истории России, уровень easy">
+                            📚 История России
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Сообщения будут добавляться сюда -->
+                <div id="messagesContainer"></div>
+            </div>
+            <div class="card-footer">
+                <form id="chatForm" class="d-flex gap-2">
+                    <input type="text"
+                           class="form-control"
+                           id="messageInput"
+                           placeholder="Опишите, какие задачи нужно создать..."
+                           autocomplete="off">
+                    <button type="submit" class="btn btn-primary" id="sendBtn">
+                        <i class="bi bi-send"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Панель задач -->
+    <div class="col-lg-4">
+        <div class="card tasks-panel">
+            <div class="card-header">
+                <i class="bi bi-list-check"></i> Найденные задачи
+                <span class="badge bg-primary ms-2" id="tasksCount">0</span>
+            </div>
+            <div class="card-body" id="tasksPanel">
+                <div class="text-center text-muted py-4" id="noTasksMessage">
+                    <i class="bi bi-inbox fs-2 mb-2 d-block"></i>
+                    <p class="mb-0">Задачи появятся здесь после генерации</p>
+                </div>
+
+                <div id="tasksList"></div>
+            </div>
+        </div>
+
+        <!-- Статистика -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <i class="bi bi-bar-chart"></i> Статистика сессии
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Сгенерировано задач:</span>
+                    <strong id="generatedCount">0</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Добавлено в БД:</span>
+                    <strong id="addedCount">0</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Сообщений в чате:</span>
+                    <strong id="messagesCount">0</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно предпросмотра задачи -->
+<div class="modal fade" id="taskPreviewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-eye"></i> Предпросмотр задачи</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="taskPreviewBody">
+                <!-- Содержимое будет добавлено JS -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-success" id="confirmAddTask">
+                    <i class="bi bi-plus-lg"></i> Добавить в БД
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// === Глобальные переменные ===
+let currentTask = null;
+let generatedCount = 0;
+let addedCount = 0;
+let messagesCount = 0;
+let allTasks = [];
+let isStreaming = false;
+
+const chatBody = document.getElementById('chatBody');
+const messagesContainer = document.getElementById('messagesContainer');
+const welcomeMessage = document.getElementById('welcomeMessage');
+const tasksList = document.getElementById('tasksList');
+const noTasksMessage = document.getElementById('noTasksMessage');
+const messageInput = document.getElementById('messageInput');
+const sendBtn = document.getElementById('sendBtn');
+const statusBadge = document.getElementById('statusBadge');
+
+// === Утилиты ===
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function updateStats() {
+    document.getElementById('generatedCount').textContent = generatedCount;
+    document.getElementById('addedCount').textContent = addedCount;
+    document.getElementById('messagesCount').textContent = messagesCount;
+    document.getElementById('tasksCount').textContent = allTasks.length;
+}
+
+function scrollToBottom() {
+    chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+function setStreaming(streaming) {
+    isStreaming = streaming;
+    sendBtn.disabled = streaming;
+    messageInput.disabled = streaming;
+
+    if (streaming) {
+        statusBadge.textContent = 'Генерация...';
+        statusBadge.className = 'badge bg-warning';
+        sendBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    } else {
+        statusBadge.textContent = 'Готов';
+        statusBadge.className = 'badge bg-success';
+        sendBtn.innerHTML = '<i class="bi bi-send"></i>';
+    }
+}
+
+// === Сообщения ===
+
+function addMessage(role, content, isStreaming = false) {
+    welcomeMessage.style.display = 'none';
+
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message ${role}-message`;
+
+    const icon = role === 'user' ? 'person-fill' : 'robot';
+    const label = role === 'user' ? 'Вы' : 'AI';
+
+    messageDiv.innerHTML = `
+        <div class="message-header">
+            <i class="bi bi-${icon}"></i> ${label}
+        </div>
+        <div class="message-content ${isStreaming ? 'streaming' : ''}" id="msg-${Date.now()}">
+            ${content}
+        </div>
+    `;
+
+    messagesContainer.appendChild(messageDiv);
+    scrollToBottom();
+
+    if (role !== 'user') {
+        messagesCount++;
+        updateStats();
+    }
+
+    return messageDiv.querySelector('.message-content');
+}
+
+function formatMessageContent(text) {
+    // Подсветка JSON блоков
+    text = text.replace(/```json\s*([\s\S]*?)\s*```/g, (match, code) => {
+        return `<pre class="json-block"><code>${escapeHtml(code)}</code></pre>`;
+    });
+
+    // Другие code блоки
+    text = text.replace(/```(\w*)\s*([\s\S]*?)\s*```/g, (match, lang, code) => {
+        return `<pre class="code-block"><code>${escapeHtml(code)}</code></pre>`;
+    });
+
+    // Inline code
+    text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+    // Жирный текст
+    text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+    // Переносы строк
+    text = text.replace(/\n/g, '<br>');
+
+    return text;
+}
+
+// === Парсинг задач ===
+
+async function parseTasks(text) {
+    try {
+        const response = await fetch('/api/ai/parse-tasks', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({text: text})
+        });
+
+        const data = await response.json();
+
+        if (data.tasks && data.tasks.length > 0) {
+            data.tasks.forEach(task => {
+                if (!allTasks.some(t => t.question === task.question)) {
+                    allTasks.push(task);
+                    generatedCount++;
+                    addTaskToPanel(task);
+                }
+            });
+            updateStats();
+        }
+    } catch (e) {
+        console.error('Error parsing tasks:', e);
+    }
+}
+
+function addTaskToPanel(task) {
+    noTasksMessage.style.display = 'none';
+
+    const taskIndex = allTasks.indexOf(task);
+
+    const taskCard = document.createElement('div');
+    taskCard.className = 'task-card mb-3';
+    taskCard.innerHTML = `
+        <div class="task-card-header">
+            <span class="badge bg-${getDifficultyColor(task.difficulty)}">${task.difficulty}</span>
+            <span class="badge bg-secondary">${escapeHtml(task.subject)}</span>
+        </div>
+        <div class="task-card-body">
+            <p class="task-question mb-2">${escapeHtml(task.question).substring(0, 100)}...</p>
+            <small class="text-muted">${task.options ? task.options.length : 0} вариантов ответа</small>
+        </div>
+        <div class="task-card-footer">
+            <button class="btn btn-sm btn-outline-primary" onclick="previewTask(${taskIndex})">
+                <i class="bi bi-eye"></i> Просмотр
+            </button>
+            <button class="btn btn-sm btn-success" onclick="addTask(${taskIndex})">
+                <i class="bi bi-plus"></i> Добавить
+            </button>
+        </div>
+    `;
+
+    tasksList.appendChild(taskCard);
+}
+
+function getDifficultyColor(difficulty) {
+    switch(difficulty) {
+        case 'easy': return 'success';
+        case 'medium': return 'warning';
+        case 'hard': return 'danger';
+        default: return 'secondary';
+    }
+}
+
+// === Предпросмотр и добавление ===
+
+function previewTask(index) {
+    const task = allTasks[index];
+    currentTask = task;
+
+    const previewBody = document.getElementById('taskPreviewBody');
+    previewBody.innerHTML = `
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Предмет</label>
+                <input type="text" class="form-control" id="editSubject" value="${escapeHtml(task.subject)}">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label fw-bold">Сложность</label>
+                <select class="form-select" id="editDifficulty">
+                    <option value="easy" ${task.difficulty === 'easy' ? 'selected' : ''}>Easy</option>
+                    <option value="medium" ${task.difficulty === 'medium' ? 'selected' : ''}>Medium</option>
+                    <option value="hard" ${task.difficulty === 'hard' ? 'selected' : ''}>Hard</option>
+                </select>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label fw-bold">Тема</label>
+                <input type="text" class="form-control" id="editTopic" value="${escapeHtml(task.topic || '')}">
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">Вопрос</label>
+            <textarea class="form-control" id="editQuestion" rows="3">${escapeHtml(task.question)}</textarea>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">Варианты ответа</label>
+            ${task.options.map((opt, i) => `
+                <div class="input-group mb-2">
+                    <span class="input-group-text">${i + 1}</span>
+                    <input type="text" class="form-control edit-option" value="${escapeHtml(opt)}">
+                </div>
+            `).join('')}
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Правильный ответ</label>
+                <input type="text" class="form-control" id="editAnswer" value="${escapeHtml(task.answer)}">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Подсказка</label>
+                <input type="text" class="form-control" id="editHint" value="${escapeHtml(task.hint || '')}">
+            </div>
+        </div>
+    `;
+
+    const modal = new bootstrap.Modal(document.getElementById('taskPreviewModal'));
+    modal.show();
+}
+
+async function addTask(index) {
+    const task = allTasks[index];
+
+    try {
+        const response = await fetch('/api/ai/add-task', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({task: task})
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            addedCount++;
+            updateStats();
+
+            // Обновляем карточку
+            const taskCards = tasksList.querySelectorAll('.task-card');
+            if (taskCards[index]) {
+                taskCards[index].classList.add('task-added');
+                taskCards[index].querySelector('.btn-success').disabled = true;
+                taskCards[index].querySelector('.btn-success').innerHTML = '<i class="bi bi-check"></i> Добавлено';
+            }
+
+            showToast('success', `Задача добавлена! ID: ${data.task_id}`);
+        } else {
+            showToast('error', data.error || 'Ошибка добавления');
+        }
+    } catch (e) {
+        showToast('error', 'Ошибка сети');
+    }
+}
+
+document.getElementById('confirmAddTask').addEventListener('click', async function() {
+    // Собираем отредактированные данные
+    const options = [];
+    document.querySelectorAll('.edit-option').forEach(input => {
+        options.push(input.value);
+    });
+
+    const editedTask = {
+        subject: document.getElementById('editSubject').value,
+        difficulty: document.getElementById('editDifficulty').value,
+        topic: document.getElementById('editTopic').value,
+        question: document.getElementById('editQuestion').value,
+        options: options,
+        answer: document.getElementById('editAnswer').value,
+        hint: document.getElementById('editHint').value
+    };
+
+    try {
+        const response = await fetch('/api/ai/add-task', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({task: editedTask})
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            addedCount++;
+            updateStats();
+            bootstrap.Modal.getInstance(document.getElementById('taskPreviewModal')).hide();
+            showToast('success', `Задача добавлена! ID: ${data.task_id}`);
+        } else {
+            showToast('error', data.error || 'Ошибка добавления');
+        }
+    } catch (e) {
+        showToast('error', 'Ошибка сети');
+    }
+});
+
+// === Отправка сообщения ===
+
+async function sendMessage(message) {
+    if (!message.trim() || isStreaming) return;
+
+    // Добавля��м сообщение пользователя
+    addMessage('user', escapeHtml(message));
+    messagesCount++;
+    updateStats();
+
+    messageInput.value = '';
+    setStreaming(true);
+
+    // Создаём placeholder для ответа
+    const responseContent = addMessage('assistant', '<span class="typing-indicator"><span></span><span></span><span></span></span>', true);
+
+    let fullResponse = '';
+
+    try {
+        const response = await fetch('/api/ai/chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({message: message})
+        });
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        responseContent.innerHTML = '';
+
+        while (true) {
+            const {done, value} = await reader.read();
+
+            if (done) break;
+
+            const text = decoder.decode(value);
+            const lines = text.split('\n');
+
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    try {
+                        const data = JSON.parse(line.slice(6));
+
+                        if (data.chunk) {
+                            fullResponse += data.chunk;
+                            responseContent.innerHTML = formatMessageContent(fullResponse);
+                            scrollToBottom();
+                        }
+
+                        if (data.done) {
+                            // Парсим задачи из ответа
+                            await parseTasks(fullResponse);
+                        }
+                    } catch (e) {
+                        // Ignore parse errors
+                    }
+                }
+            }
+        }
+
+    } catch (e) {
+        responseContent.innerHTML = `<span class="text-danger">Ошибка: ${escapeHtml(e.message)}</span>`;
+    } finally {
+        setStreaming(false);
+        responseContent.classList.remove('streaming');
+    }
+}
+
+// === Очистка чата ===
+
+async function clearChat() {
+    if (!confirm('Очистить историю чата?')) return;
+
+    try {
+        await fetch('/api/ai/clear-history', {method: 'POST'});
+
+        messagesContainer.innerHTML = '';
+        welcomeMessage.style.display = 'block';
+        tasksList.innerHTML = '';
+        noTasksMessage.style.display = 'block';
+
+        allTasks = [];
+        generatedCount = 0;
+        messagesCount = 0;
+        updateStats();
+
+        showToast('success', 'Чат очищен');
+    } catch (e) {
+        showToast('error', 'Ошибка очистки');
+    }
+}
+
+// === Уведомления ===
+
+function showToast(type, message) {
+    const toast = document.createElement('div');
+    toast.className = `toast-notification ${type}`;
+    toast.innerHTML = `
+        <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+        ${escapeHtml(message)}
+    `;
+    document.body.appendChild(toast);
+
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// === Обработчики событий ===
+
+document.getElementById('chatForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    sendMessage(messageInput.value);
+});
+
+// Быстрые промпты
+document.querySelectorAll('.quick-prompt').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const prompt = this.dataset.prompt;
+        messageInput.value = prompt;
+        sendMessage(prompt);
+    });
+});
+
+// Загрузка истории при старте
+(async function() {
+    try {
+        const response = await fetch('/api/ai/get-history');
+        const data = await response.json();
+
+        if (data.history && data.history.length > 0) {
+            welcomeMessage.style.display = 'none';
+
+            data.history.forEach(msg => {
+                const content = formatMessageContent(msg.content);
+                addMessage(msg.role, content);
+
+                if (msg.role === 'assistant') {
+                    parseTasks(msg.content);
+                }
+            });
+        }
+    } catch (e) {
+        console.error('Error loading history:', e);
+    }
+})();
+</script>
+{% endblock %}

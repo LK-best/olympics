@@ -1,0 +1,657 @@
+{% extends "base.html" %}
+
+{% block title %}Импорт задач — DB Editor{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="bi bi-upload"></i> Импорт задач
+                <small class="text-muted fs-6">JSON / CSV</small>
+            </h1>
+            <div class="btn-group">
+                <a href="{{ url_for('ai_tasks') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-robot"></i> AI Генератор
+                </a>
+                <a href="{{ url_for('view_table', table_name='tasks') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-table"></i> К таблице задач
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Левая колонка: загрузка -->
+    <div class="col-lg-7">
+        <!-- Загрузка файла -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-file-earmark-arrow-up"></i> Загрузка файла
+            </div>
+            <div class="card-body">
+                <div class="upload-zone" id="uploadZone">
+                    <input type="file" id="fileInput" accept=".json,.csv" class="d-none">
+                    <div class="text-center py-4" id="uploadPrompt">
+                        <i class="bi bi-cloud-arrow-up fs-1 text-primary mb-3 d-block"></i>
+                        <h5>Перетащите файл сюда</h5>
+                        <p class="text-muted mb-3">или нажмите для выбора</p>
+                        <p class="text-muted small">Поддерживаемые форматы: <strong>.json</strong>, <strong>.csv</strong></p>
+                    </div>
+                    <div class="text-center py-3 d-none" id="fileInfo">
+                        <i class="bi bi-file-earmark-check fs-2 text-success mb-2 d-block"></i>
+                        <p class="mb-1"><strong id="fileName"></strong></p>
+                        <p class="text-muted small mb-0" id="fileSize"></p>
+                    </div>
+                </div>
+
+                <div class="mt-3 d-flex gap-2">
+                    <button class="btn btn-primary flex-grow-1" id="btnPreview" disabled>
+                        <i class="bi bi-eye"></i> Предпросмотр
+                    </button>
+                    <button class="btn btn-success flex-grow-1" id="btnImport" disabled>
+                        <i class="bi bi-database-add"></i> Импортировать
+                    </button>
+                    <button class="btn btn-outline-secondary" id="btnClearFile" style="display:none">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Вставка JSON текста -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-code-square"></i> Вставить JSON</span>
+                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#jsonTextCollapse">
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+            </div>
+            <div class="collapse" id="jsonTextCollapse">
+                <div class="card-body">
+                    <textarea class="form-control font-monospace" id="jsonTextarea" rows="12"
+                              placeholder='Вставьте JSON с задачами...
+
+Пример:
+[
+  {
+    "task": {
+      "subject": "Математика",
+      "difficulty": "medium",
+      "topic": "Квадратные уравнения",
+      "question": "Найдите корни x² - 5x + 6 = 0",
+      "options": ["x=2, x=3", "x=1, x=6", "x=-2, x=-3", "x=2, x=-3"],
+      "answer": "x=2, x=3",
+      "hint": "Используйте теорему Виета"
+    }
+  }
+]'></textarea>
+                    <div class="mt-2 d-flex gap-2">
+                        <button class="btn btn-success flex-grow-1" id="btnImportText">
+                            <i class="bi bi-database-add"></i> Импортировать из текста
+                        </button>
+                        <button class="btn btn-outline-secondary" id="btnClearText">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Результат импорта -->
+        <div class="card d-none" id="resultCard">
+            <div class="card-header" id="resultHeader">
+                <i class="bi bi-info-circle"></i> Результат импорта
+            </div>
+            <div class="card-body" id="resultBody">
+            </div>
+        </div>
+    </div>
+
+    <!-- Правая колонка: справка и предпросмотр -->
+    <div class="col-lg-5">
+        <!-- Предпросмотр задач -->
+        <div class="card mb-4 d-none" id="previewCard">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-list-check"></i> Предпросмотр</span>
+                <span class="badge bg-primary" id="previewCount">0</span>
+            </div>
+            <div class="card-body" style="max-height: 500px; overflow-y: auto;" id="previewBody">
+            </div>
+            <div class="card-footer">
+                <button class="btn btn-success w-100" id="btnImportPreview">
+                    <i class="bi bi-database-add"></i> Импортировать все задачи
+                </button>
+            </div>
+        </div>
+
+        <!-- Справка по форматам -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-question-circle"></i> Форматы файлов
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-tabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#jsonFormat" type="button">JSON</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#csvFormat" type="button">CSV</button>
+                    </li>
+                </ul>
+                <div class="tab-content mt-3">
+                    <div class="tab-pane fade show active" id="jsonFormat">
+                        <p class="small mb-2">Массив задач (рекомендуемый формат):</p>
+                        <pre class="bg-dark text-light p-3 rounded small"><code>[
+  {
+    "task": {
+      "subject": "Математика",
+      "difficulty": "medium",
+      "topic": "Алгебра",
+      "question": "Текст вопроса",
+      "options": ["A", "B", "C", "D"],
+      "answer": "A",
+      "hint": "Подсказка"
+    }
+  },
+  {
+    "task": { ... }
+  }
+]</code></pre>
+                        <p class="small mt-2 mb-1">Также поддерживаются:</p>
+                        <ul class="small">
+                            <li><code>{"task": {...}}</code> — одна задача</li>
+                            <li><code>{"tasks": [...]}</code> — массив в объекте</li>
+                            <li><code>[{"subject":..., "question":...}]</code> — без обёртки task</li>
+                        </ul>
+                    </div>
+                    <div class="tab-pane fade" id="csvFormat">
+                        <p class="small mb-2">Обязательные колонки:</p>
+                        <pre class="bg-dark text-light p-3 rounded small"><code>subject,difficulty,topic,question,options,answer,hint
+Математика,medium,Алгебра,"Текст вопроса","[""A"",""B"",""C"",""D""]",A,Подсказка</code></pre>
+                        <p class="small mt-2 mb-1">Правила:</p>
+                        <ul class="small">
+                            <li><strong>options</strong> — JSON массив в виде строки</li>
+                            <li><strong>difficulty</strong> — easy, medium или hard</li>
+                            <li>Кодировка: UTF-8</li>
+                            <li>Разделитель: запятая</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Доступные предметы -->
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-book"></i> Доступные предметы
+            </div>
+            <div class="card-body">
+                <span class="badge bg-primary m-1">Математика</span>
+                <span class="badge bg-info m-1">Физика</span>
+                <span class="badge bg-success m-1">Информатика</span>
+                <span class="badge bg-warning text-dark m-1">История</span>
+                <span class="badge bg-secondary m-1">Русский язык</span>
+                <hr>
+                <p class="small mb-0 text-muted">
+                    <strong>Сложность:</strong>
+                    <span class="badge bg-success">easy</span>
+                    <span class="badge bg-warning text-dark">medium</span>
+                    <span class="badge bg-danger">hard</span>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно предпросмотра одной задачи -->
+<div class="modal fade" id="taskDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-eye"></i> Детали задачи</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="taskDetailBody">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+    .upload-zone {
+        border: 2px dashed #6c757d;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: var(--bs-body-bg);
+    }
+    .upload-zone:hover,
+    .upload-zone.drag-over {
+        border-color: #0d6efd;
+        background: rgba(13, 110, 253, 0.05);
+    }
+    .upload-zone.file-loaded {
+        border-color: #198754;
+        border-style: solid;
+    }
+    .preview-task-card {
+        border: 1px solid var(--bs-border-color);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 10px;
+        transition: background 0.2s;
+    }
+    .preview-task-card:hover {
+        background: rgba(13, 110, 253, 0.05);
+    }
+    .preview-task-card .badge {
+        font-size: 0.7em;
+    }
+    .result-success {
+        border-left: 4px solid #198754;
+    }
+    .result-warning {
+        border-left: 4px solid #ffc107;
+    }
+    .result-error {
+        border-left: 4px solid #dc3545;
+    }
+</style>
+
+<script>
+// === Глобальные переменные ===
+let selectedFile = null;
+let previewTasks = [];
+
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+const uploadPrompt = document.getElementById('uploadPrompt');
+const fileInfo = document.getElementById('fileInfo');
+const btnPreview = document.getElementById('btnPreview');
+const btnImport = document.getElementById('btnImport');
+const btnClearFile = document.getElementById('btnClearFile');
+const previewCard = document.getElementById('previewCard');
+const previewBody = document.getElementById('previewBody');
+const resultCard = document.getElementById('resultCard');
+const resultBody = document.getElementById('resultBody');
+
+// === Утилиты ===
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function getDifficultyColor(difficulty) {
+    switch(difficulty) {
+        case 'easy': return 'success';
+        case 'medium': return 'warning text-dark';
+        case 'hard': return 'danger';
+        default: return 'secondary';
+    }
+}
+
+function showToast(type, message) {
+    const toast = document.createElement('div');
+    toast.className = `toast-notification ${type}`;
+    toast.innerHTML = `
+        <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+        ${escapeHtml(message)}
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+// === Drag & Drop / File Select ===
+
+uploadZone.addEventListener('click', () => fileInput.click());
+
+uploadZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadZone.classList.add('drag-over');
+});
+
+uploadZone.addEventListener('dragleave', () => {
+    uploadZone.classList.remove('drag-over');
+});
+
+uploadZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadZone.classList.remove('drag-over');
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        handleFile(files[0]);
+    }
+});
+
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+    }
+});
+
+function handleFile(file) {
+    const ext = file.name.toLowerCase().split('.').pop();
+    if (ext !== 'json' && ext !== 'csv') {
+        showToast('error', 'Неподдерживаемый формат. Используйте .json или .csv');
+        return;
+    }
+
+    selectedFile = file;
+
+    uploadPrompt.classList.add('d-none');
+    fileInfo.classList.remove('d-none');
+    document.getElementById('fileName').textContent = file.name;
+    document.getElementById('fileSize').textContent = formatFileSize(file.size);
+    uploadZone.classList.add('file-loaded');
+
+    btnPreview.disabled = false;
+    btnImport.disabled = false;
+    btnClearFile.style.display = 'inline-block';
+
+    // Сбрасываем предпросмотр
+    previewCard.classList.add('d-none');
+    previewTasks = [];
+}
+
+btnClearFile.addEventListener('click', (e) => {
+    e.stopPropagation();
+    clearFile();
+});
+
+function clearFile() {
+    selectedFile = null;
+    fileInput.value = '';
+
+    uploadPrompt.classList.remove('d-none');
+    fileInfo.classList.add('d-none');
+    uploadZone.classList.remove('file-loaded');
+
+    btnPreview.disabled = true;
+    btnImport.disabled = true;
+    btnClearFile.style.display = 'none';
+
+    previewCard.classList.add('d-none');
+    previewTasks = [];
+}
+
+// === Предпросмотр ===
+
+btnPreview.addEventListener('click', async () => {
+    if (!selectedFile) return;
+
+    btnPreview.disabled = true;
+    btnPreview.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Загрузка...';
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    try {
+        const response = await fetch('/api/import/preview', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            previewTasks = data.tasks;
+            renderPreview(data.tasks, data.errors);
+        } else {
+            showToast('error', data.error || 'Ошибка предпросмотра');
+        }
+    } catch (e) {
+        showToast('error', 'Ошибка сети: ' + e.message);
+    } finally {
+        btnPreview.disabled = false;
+        btnPreview.innerHTML = '<i class="bi bi-eye"></i> Предпросмотр';
+    }
+});
+
+function renderPreview(tasks, errors) {
+    previewCard.classList.remove('d-none');
+    document.getElementById('previewCount').textContent = tasks.length;
+
+    let html = '';
+
+    if (errors && errors.length > 0) {
+        html += '<div class="alert alert-warning py-2 small mb-3">';
+        html += '<strong>Предупреждения:</strong><br>';
+        errors.forEach(err => {
+            html += `<i class="bi bi-exclamation-triangle"></i> ${escapeHtml(err)}<br>`;
+        });
+        html += '</div>';
+    }
+
+    if (tasks.length === 0) {
+        html += '<div class="text-center text-muted py-3"><i class="bi bi-inbox fs-2 d-block mb-2"></i>Задачи не найдены</div>';
+    } else {
+        tasks.forEach((task, index) => {
+            html += `
+                <div class="preview-task-card" onclick="showTaskDetail(${index})" style="cursor:pointer">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <span class="fw-bold small">${index + 1}. ${escapeHtml(task.subject)}</span>
+                        <span class="badge bg-${getDifficultyColor(task.difficulty)}">${task.difficulty}</span>
+                    </div>
+                    <p class="mb-1 small">${escapeHtml(task.question.substring(0, 100))}${task.question.length > 100 ? '...' : ''}</p>
+                    <small class="text-muted">${task.options.length} вариантов · ${task.topic ? escapeHtml(task.topic) : 'без темы'}</small>
+                </div>
+            `;
+        });
+    }
+
+    previewBody.innerHTML = html;
+}
+
+function showTaskDetail(index) {
+    const task = previewTasks[index];
+    if (!task) return;
+
+    const body = document.getElementById('taskDetailBody');
+    body.innerHTML = `
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label class="form-label fw-bold small">Предмет</label>
+                <p>${escapeHtml(task.subject)}</p>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold small">Сложность</label>
+                <p><span class="badge bg-${getDifficultyColor(task.difficulty)}">${task.difficulty}</span></p>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold small">Тема</label>
+                <p>${escapeHtml(task.topic || '—')}</p>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-bold small">Вопрос</label>
+            <p>${escapeHtml(task.question)}</p>
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-bold small">Варианты ответа</label>
+            <ol class="mb-0">
+                ${task.options.map(opt => {
+                    const isCorrect = opt === task.answer;
+                    return `<li class="${isCorrect ? 'text-success fw-bold' : ''}">${escapeHtml(opt)} ${isCorrect ? '✓' : ''}</li>`;
+                }).join('')}
+            </ol>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <label class="form-label fw-bold small">Правильный ответ</label>
+                <p class="text-success">${escapeHtml(task.answer)}</p>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold small">Подсказка</label>
+                <p class="text-muted">${escapeHtml(task.hint || '—')}</p>
+            </div>
+        </div>
+    `;
+
+    new bootstrap.Modal(document.getElementById('taskDetailModal')).show();
+}
+
+// === Импорт из файла ===
+
+btnImport.addEventListener('click', () => importFromFile());
+
+document.getElementById('btnImportPreview')?.addEventListener('click', () => importFromFile());
+
+async function importFromFile() {
+    if (!selectedFile) return;
+
+    const ext = selectedFile.name.toLowerCase().split('.').pop();
+    const url = ext === 'json' ? '/api/import/json' : '/api/import/csv';
+
+    btnImport.disabled = true;
+    btnImport.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Импорт...';
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+        showResult(data);
+    } catch (e) {
+        showToast('error', 'Ошибка сети: ' + e.message);
+    } finally {
+        btnImport.disabled = false;
+        btnImport.innerHTML = '<i class="bi bi-database-add"></i> Импортировать';
+    }
+}
+
+// === Импорт из текста ===
+
+document.getElementById('btnImportText').addEventListener('click', async () => {
+    const text = document.getElementById('jsonTextarea').value.trim();
+    if (!text) {
+        showToast('error', 'Вставьте JSON текст');
+        return;
+    }
+
+    const btn = document.getElementById('btnImportText');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Импорт...';
+
+    try {
+        const response = await fetch('/api/import/json-text', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({text: text})
+        });
+
+        const data = await response.json();
+        showResult(data);
+    } catch (e) {
+        showToast('error', 'Ошибка сети: ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-database-add"></i> Импортировать из текста';
+    }
+});
+
+document.getElementById('btnClearText').addEventListener('click', () => {
+    document.getElementById('jsonTextarea').value = '';
+});
+
+// === Отображение результата ===
+
+function showResult(data) {
+    resultCard.classList.remove('d-none');
+
+    if (!data.success) {
+        resultCard.querySelector('.card-header').className = 'card-header text-danger';
+        resultBody.innerHTML = `
+            <div class="alert alert-danger mb-0">
+                <i class="bi bi-x-circle"></i> <strong>Ошибка:</strong> ${escapeHtml(data.error)}
+            </div>
+        `;
+        showToast('error', data.error || 'Ошибка импорта');
+        return;
+    }
+
+    const hasErrors = (data.parse_errors && data.parse_errors.length > 0) ||
+                      (data.insert_errors && data.insert_errors.length > 0);
+
+    resultCard.querySelector('.card-header').className = hasErrors
+        ? 'card-header text-warning'
+        : 'card-header text-success';
+
+    let html = `
+        <div class="alert ${hasErrors ? 'alert-warning' : 'alert-success'} mb-3">
+            <h6 class="alert-heading mb-2">
+                <i class="bi bi-${hasErrors ? 'exclamation-triangle' : 'check-circle'}"></i>
+                Импорт ${hasErrors ? 'завершён с предупреждениями' : 'успешен'}!
+            </h6>
+            <div class="d-flex gap-4">
+                <div>
+                    <strong class="fs-4 text-success">${data.added}</strong>
+                    <br><small>добавлено</small>
+                </div>
+                <div>
+                    <strong class="fs-4">${data.total_in_file}</strong>
+                    <br><small>всего в файле</small>
+                </div>
+            </div>
+        </div>
+    `;
+
+    if (data.added_ids && data.added_ids.length > 0) {
+        html += `<p class="small text-muted mb-2">ID добавленных задач: ${data.added_ids.join(', ')}</p>`;
+    }
+
+    if (data.parse_errors && data.parse_errors.length > 0) {
+        html += `<div class="mt-2"><strong class="small text-danger">Ошибки парсинга:</strong><ul class="small mb-0">`;
+        data.parse_errors.forEach(err => {
+            html += `<li>${escapeHtml(err)}</li>`;
+        });
+        html += '</ul></div>';
+    }
+
+    if (data.insert_errors && data.insert_errors.length > 0) {
+        html += `<div class="mt-2"><strong class="small text-danger">Ошибки вставки:</strong><ul class="small mb-0">`;
+        data.insert_errors.forEach(err => {
+            html += `<li>${escapeHtml(err)}</li>`;
+        });
+        html += '</ul></div>';
+    }
+
+    html += `
+        <div class="mt-3">
+            <a href="{{ url_for('view_table', table_name='tasks') }}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-table"></i> Посмотреть в таблице
+            </a>
+        </div>
+    `;
+
+    resultBody.innerHTML = html;
+    showToast('success', `Импортировано задач: ${data.added}`);
+}
+
+// === Скачивание шаблонов ===
+// Можно добавить кнопки скачивания шаблонов (опционально)
+</script>
+{% endblock %}
