@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-🚀 EduBattle Launcher v3.2
 Единая точка входа для всех сервисов
 """
 
@@ -63,7 +62,7 @@ def run_fastapi_server():
 
         app = server_module.app
 
-        print(f"🚀 FastAPI сервер (EduBattle v3.2) запускается на http://localhost:{FASTAPI_PORT}")
+        print(f"FastAPI сервер (EduBattle v3.2) запускается на http://localhost:{FASTAPI_PORT}")
 
         # Запускаем uvicorn
         config = uvicorn.Config(
@@ -99,7 +98,7 @@ def run_flask_server():
         app_path = os.path.join(db_editor_dir, "app.py")
 
         if not os.path.exists(app_path):
-            print(f"⚠️ Flask приложение не найдено: {app_path}")
+            print(f"Flask приложение не найдено: {app_path}")
             print("   DB Editor будет пропущен")
             return
 
@@ -109,11 +108,11 @@ def run_flask_server():
 
         flask_app = app_module.app
 
-        print(f"🌐 Flask сервер (DB Editor) запускается на http://localhost:{FLASK_PORT}")
+        print(f"Flask сервер (DB Editor) запускается на http://localhost:{FLASK_PORT}")
         flask_app.run(host="0.0.0.0", port=FLASK_PORT, debug=False, use_reloader=False)
 
     except Exception as e:
-        print(f"❌ Ошибка Flask: {e}")
+        print(f" Ошибка Flask: {e}")
         import traceback
         traceback.print_exc()
 
@@ -132,21 +131,21 @@ def run_telegram_bot():
         bot_path = os.path.join(db_editor_dir, "bot.py")
 
         if not os.path.exists(bot_path):
-            print(f"⚠️ Telegram бот не найден: {bot_path}")
+            print(f"Telegram бот не найден: {bot_path}")
             return
 
         spec = importlib.util.spec_from_file_location("bot", bot_path)
         bot_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(bot_module)
 
-        print("🤖 Telegram бот запускается...")
+        print("Telegram бот запускается...")
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(bot_module.main())
 
     except Exception as e:
-        print(f"❌ Ошибка Telegram бота: {e}")
+        print(f"Ошибка Telegram бота: {e}")
         import traceback
         traceback.print_exc()
 
@@ -154,7 +153,7 @@ def run_telegram_bot():
 def check_database():
     """Проверка наличия базы данных"""
     if not os.path.exists(DATABASE_PATH):
-        print(f"⚠️  База данных не найдена: {DATABASE_PATH}")
+        print(f"  База данных не найдена: {DATABASE_PATH}")
         print("   Попытка создать базу данных...")
 
         try:
@@ -193,7 +192,7 @@ def check_database():
 def check_index_html():
     """Проверка наличия index.html"""
     if not os.path.exists(INDEX_HTML_PATH):
-        print(f"⚠️  index.html не найден: {INDEX_HTML_PATH}")
+        print(f" index.html не найден: {INDEX_HTML_PATH}")
         return False
     print(f"✅ index.html найден")
     return True
@@ -233,7 +232,7 @@ def main():
 
     check_index_html()
 
-    print("\n🚀 Запуск всех сервисов...\n")
+    print("\nЗапуск всех сервисов...\n")
 
     processes = []
 
@@ -265,9 +264,9 @@ def main():
         print("=" * 55)
         print(f"\n📱 EduBattle:           http://localhost:{FASTAPI_PORT}")
         if os.path.exists(db_editor_app):
-            print(f"🔧 Редактор БД:         http://localhost:{FLASK_PORT}")
-        print(f"\n👤 Админ: admin@edu.ru / admin123")
-        print("\n⚠️  Для остановки нажмите Ctrl+C")
+            print(f"Редактор БД:         http://localhost:{FLASK_PORT}")
+        print(f"\nАдмин: admin@edu.ru / admin123")
+        print("\n Для остановки нажмите Ctrl+C")
         print("=" * 55 + "\n")
 
         # Ждём завершения процессов
